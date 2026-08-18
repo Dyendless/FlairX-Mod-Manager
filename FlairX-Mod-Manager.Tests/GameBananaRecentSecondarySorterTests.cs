@@ -1,4 +1,6 @@
+using FlairX_Mod_Manager.Pages;
 using FlairX_Mod_Manager.Services;
+using System.Text.Json;
 using Xunit;
 
 namespace FlairX_Mod_Manager.Tests;
@@ -137,6 +139,34 @@ public class GameBananaRecentSecondarySorterTests
                 GameBananaService.CategorySortOrder.LatestUpdated,
                 search,
                 GameBananaRecentSecondarySort.MostCommented));
+    }
+
+    [Fact]
+    public void GetPostCount_ReadsMetadataFallback()
+    {
+        var record = new GameBananaService.ModRecord
+        {
+            Metadata = new Dictionary<string, object>
+            {
+                ["_nPostCount"] = JsonDocument.Parse("17").RootElement.Clone()
+            }
+        };
+
+        Assert.Equal(17, record.GetPostCount());
+    }
+
+    [Fact]
+    public void CreateModViewModel_MapsDownloadAndCommentCounts()
+    {
+        var record = Record(1, downloads: 42, comments: 7);
+
+        var viewModel = GameBananaBrowserUserControl.CreateModViewModel(
+            record,
+            installedText: "Installed",
+            isInstalled: false);
+
+        Assert.Equal(42, viewModel.DownloadCount);
+        Assert.Equal(7, viewModel.CommentCount);
     }
 
     private static GameBananaService.ModRecord Record(

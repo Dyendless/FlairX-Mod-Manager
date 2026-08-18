@@ -166,6 +166,7 @@ namespace FlairX_Mod_Manager.Pages
             public string? CategoryIconUrl { get; set; }
             public int DownloadCount { get; set; }
             public int LikeCount { get; set; }
+            public int CommentCount { get; set; }
             public int ViewCount { get; set; }
             public long DateAdded { get; set; }
             public long DateModified { get; set; }
@@ -352,6 +353,42 @@ namespace FlairX_Mod_Manager.Pages
                 // Load mods (sections will be extracted from loaded mods)
                 _ = LoadModsAsync();
             }
+        }
+
+        internal static ModViewModel CreateModViewModel(
+            GameBananaService.ModRecord record,
+            string installedText,
+            bool isInstalled)
+        {
+            var image = record.PreviewMedia?.Images?.FirstOrDefault();
+            return new ModViewModel
+            {
+                Id = record.Id,
+                Name = record.Name ?? "",
+                AuthorName = record.Submitter?.Name ?? "Unknown",
+                ProfileUrl = record.ProfileUrl ?? "",
+                ImageUrl = image is null ? null : GameBananaService.GetListPreviewImageUrl(image),
+                DownloadCount = record.GetDownloadCount(),
+                LikeCount = record.GetLikeCount(),
+                CommentCount = record.GetPostCount(),
+                ViewCount = record.GetViewCount(),
+                DateAdded = record.DateAdded,
+                DateModified = record.DateModified,
+                DateUpdated = record.DateUpdated,
+                IsRated = record.HasAnyContentWarning,
+                IsInstalled = isInstalled,
+                InstalledText = installedText
+            };
+        }
+
+        private bool ShouldIncludeMod(GameBananaService.ModRecord record)
+        {
+            if (record.HasAnyContentWarning && SettingsManager.Current.HideNSFWMods)
+            {
+                return false;
+            }
+
+            return !IsModBlacklisted(record.Submitter?.Name ?? "", record.Name ?? "");
         }
 
         private void CreateCharacterFilterComboBox()
@@ -772,42 +809,15 @@ namespace FlairX_Mod_Manager.Pages
                         continue;
                     }
 
-                    // Skip NSFW content if setting is enabled
-                    if (record.HasAnyContentWarning && SettingsManager.Current.HideNSFWMods)
+                    if (!ShouldIncludeMod(record))
                     {
                         continue;
                     }
 
-                    // Skip blacklisted mods
-                    var authorName = record.Submitter?.Name ?? "";
-                    var modName = record.Name ?? "";
-                    if (IsModBlacklisted(authorName, modName))
-                    {
-                        continue;
-                    }
-
-                    var viewModel = new ModViewModel
-                    {
-                        Id = record.Id,
-                        Name = record.Name ?? "",
-                        AuthorName = record.Submitter?.Name ?? "Unknown",
-                        ProfileUrl = record.ProfileUrl ?? "",
-                        LikeCount = record.GetLikeCount(),
-                        ViewCount = record.GetViewCount(),
-                        DateAdded = record.DateAdded,
-                        DateModified = record.DateModified,
-                        DateUpdated = record.DateUpdated,
-                        IsRated = record.HasAnyContentWarning,
-                        IsInstalled = IsModInstalled(record.ProfileUrl ?? ""),
-                        InstalledText = installedText
-                    };
-
-                    // Get preview image
-                    var image = record.PreviewMedia?.Images?.FirstOrDefault();
-                    if (image != null)
-                    {
-                        viewModel.ImageUrl = GameBananaService.GetListPreviewImageUrl(image);
-                    }
+                    var viewModel = CreateModViewModel(
+                        record,
+                        installedText,
+                        IsModInstalled(record.ProfileUrl ?? ""));
 
                     _mods.Add(viewModel);
                     _loadedModIds.Add(record.Id); // Track to prevent duplicates
@@ -1207,35 +1217,13 @@ namespace FlairX_Mod_Manager.Pages
                     if (_loadedModIds.Contains(record.Id))
                         continue;
 
-                    // Skip NSFW content if setting is enabled
-                    if (record.HasAnyContentWarning && SettingsManager.Current.HideNSFWMods)
+                    if (!ShouldIncludeMod(record))
                         continue;
 
-                    // Skip blacklisted mods
-                    var authorName = record.Submitter?.Name ?? "";
-                    var modName = record.Name ?? "";
-                    if (IsModBlacklisted(authorName, modName))
-                        continue;
-
-                    var viewModel = new ModViewModel
-                    {
-                        Id = record.Id,
-                        Name = record.Name ?? "",
-                        AuthorName = record.Submitter?.Name ?? "Unknown",
-                        ProfileUrl = record.ProfileUrl ?? "",
-                        LikeCount = record.GetLikeCount(),
-                        ViewCount = record.GetViewCount(),
-                        DateAdded = record.DateAdded,
-                        DateModified = record.DateModified,
-                        DateUpdated = record.DateUpdated,
-                        IsRated = record.HasAnyContentWarning,
-                        IsInstalled = false, // Checked lazily in background below
-                        InstalledText = installedText
-                    };
-
-                    var image = record.PreviewMedia?.Images?.FirstOrDefault();
-                    if (image != null)
-                        viewModel.ImageUrl = GameBananaService.GetListPreviewImageUrl(image);
+                    var viewModel = CreateModViewModel(
+                        record,
+                        installedText,
+                        isInstalled: false);
 
                     _mods.Add(viewModel);
                     _loadedModIds.Add(record.Id);

@@ -203,6 +203,18 @@ namespace FlairX_Mod_Manager.Services
                 }
                 return 0;
             }
+
+            public int GetPostCount()
+            {
+                if (PostCount > 0) return PostCount;
+                if (Metadata != null && Metadata.TryGetValue("_nPostCount", out var value) &&
+                    value is JsonElement element && element.ValueKind == JsonValueKind.Number)
+                {
+                    return element.GetInt32();
+                }
+
+                return 0;
+            }
         }
 
         public class PreviewMedia

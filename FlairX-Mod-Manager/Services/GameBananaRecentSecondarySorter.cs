@@ -50,7 +50,7 @@ internal static class GameBananaRecentSecondarySorter
         {
             GameBananaRecentSecondarySort.MostDownloaded => Order(candidates, record => record.GetDownloadCount()),
             GameBananaRecentSecondarySort.MostLiked => Order(candidates, record => record.GetLikeCount()),
-            GameBananaRecentSecondarySort.MostCommented => Order(candidates, record => record.PostCount),
+            GameBananaRecentSecondarySort.MostCommented => Order(candidates, record => record.GetPostCount()),
             _ => candidates.ToList()
         };
 
