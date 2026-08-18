@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Net.Http;
 using System.IO;
@@ -25,6 +26,7 @@ namespace FlairX_Mod_Manager.Pages
 
         private string _gameTag = "";
         private int _currentPage = 1;
+        private int _loadGeneration;
         private string? _currentSearch = null;
         private CategoryFilter _currentCategoryFilter = CategoryFilter.AllMods;
         private GameBananaService.CategorySortOrder _currentSortOrder = GameBananaService.CategorySortOrder.LatestUpdated;
@@ -718,87 +720,68 @@ namespace FlairX_Mod_Manager.Pages
             
             // Trigger search
             _currentSearch = searchQuery;
+            UpdateSecondarySortAvailability();
             _currentPage = 1;
             _ = LoadModsAsync();
         }
 
+        private Task<GameBananaService.ModListResponse?> FetchModsPageAsync(int page)
+        {
+            if (_currentCategoryFilter == CategoryFilter.CharacterSkins)
+            {
+                return GameBananaService.GetModsByCategoryAsync(
+                    _gameTag,
+                    GetActiveCharacterCategoryId(),
+                    page,
+                    _currentSearch,
+                    _currentSortOrder);
+            }
+
+            return GameBananaService.GetModsAsync(
+                _gameTag, page, _currentSearch, null, null, null, null, null, null);
+        }
+
         private async Task LoadModsAsync()
         {
+            var loadGeneration = Interlocked.Increment(ref _loadGeneration);
+
             try
             {
                 LoadingPanel.Visibility = Visibility.Visible;
                 EmptyPanel.Visibility = Visibility.Collapsed;
                 ModsGridView.Visibility = Visibility.Collapsed;
+                ConnectionErrorBar.Severity = InfoBarSeverity.Error;
                 ConnectionErrorBar.IsOpen = false;
 
                 _mods.Clear();
-                _loadedModIds.Clear(); // Reset tracking for new search/page
-                
-                // Fetch single page from API
-                GameBananaService.ModListResponse? response;
+                _loadedModIds.Clear();
 
-                if (_currentCategoryFilter == CategoryFilter.CharacterSkins)
-                {
-                    var categoryId = GetActiveCharacterCategoryId();
-                    response = await GameBananaService.GetModsByCategoryAsync(
-                        _gameTag,
-                        categoryId,
-                        _currentPage,
-                        _currentSearch,
-                        _currentSortOrder);
-                }
-                else
-                {
-                    response = await GameBananaService.GetModsAsync(
-                        _gameTag,
-                        _currentPage,
-                        _currentSearch,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null);
-                }
+                var secondarySort = GameBananaRecentSecondarySorter.Normalize(
+                    _currentCategoryFilter == CategoryFilter.CharacterSkins,
+                    _currentSortOrder,
+                    _currentSearch,
+                    _currentSecondarySort);
+                var secondarySortActive = secondarySort != GameBananaRecentSecondarySort.None;
+                var firstPage = secondarySortActive ? 1 : _currentPage;
+                var response = await FetchModsPageAsync(firstPage);
+                if (loadGeneration != _loadGeneration) return;
 
                 if (response == null)
                 {
-                    // Try Cloudflare bypass
                     Logger.LogInfo("Response is null, attempting Cloudflare bypass...");
-                    var (cookies, userAgent) = await Services.CloudflareBypassService.BypassCloudflareAsync(this.XamlRoot);
-                    
+                    var (cookies, _) = await Services.CloudflareBypassService.BypassCloudflareAsync(this.XamlRoot);
+                    if (loadGeneration != _loadGeneration) return;
+
                     if (!string.IsNullOrEmpty(cookies))
                     {
-                        // Retry the request
-                        if (_currentCategoryFilter == CategoryFilter.CharacterSkins)
-                        {
-                            var categoryId = GetActiveCharacterCategoryId();
-                            response = await GameBananaService.GetModsByCategoryAsync(
-                                _gameTag,
-                                categoryId,
-                                _currentPage,
-                                _currentSearch,
-                                _currentSortOrder);
-                        }
-                        else
-                        {
-                            response = await GameBananaService.GetModsAsync(
-                                _gameTag,
-                                _currentPage,
-                                _currentSearch,
-                                null,
-                                null,
-                                null,
-                                null,
-                                null,
-                                null);
-                        }
+                        response = await FetchModsPageAsync(firstPage);
+                        if (loadGeneration != _loadGeneration) return;
                     }
-                    
+
                     if (response == null)
                     {
-                        // Still failed - show error
                         LoadingPanel.Visibility = Visibility.Collapsed;
+                        ConnectionErrorBar.Severity = InfoBarSeverity.Error;
                         ConnectionErrorBar.Title = SharedUtilities.GetTranslation(_lang, "ConnectionErrorTitle");
                         ConnectionErrorBar.Message = SharedUtilities.GetTranslation(_lang, "ConnectionErrorMessage");
                         ConnectionErrorBar.IsOpen = true;
@@ -807,38 +790,46 @@ namespace FlairX_Mod_Manager.Pages
                     }
                 }
 
-                if (response.Records == null || response.Records.Count == 0)
+                var firstPageRecords = response.Records ?? [];
+                IReadOnlyList<GameBananaService.ModRecord> records;
+                var partialSecondaryPool = false;
+
+                if (secondarySortActive)
+                {
+                    var secondResponse = await FetchModsPageAsync(2);
+                    if (loadGeneration != _loadGeneration) return;
+
+                    var pool = GameBananaRecentSecondarySorter.Build(
+                        firstPageRecords,
+                        secondResponse?.Records,
+                        secondarySort)!;
+                    records = pool.Records;
+                    partialSecondaryPool = pool.IsPartial;
+                    _hasMorePages = false;
+                }
+                else
+                {
+                    records = firstPageRecords;
+                    _hasMorePages = response.Metadata != null
+                        ? !response.Metadata.IsComplete
+                        : firstPageRecords.Count >= 50;
+                }
+
+                if (records.Count == 0)
                 {
                     LoadingPanel.Visibility = Visibility.Collapsed;
                     EmptyPanel.Visibility = Visibility.Visible;
-                    EmptyText.Text = string.IsNullOrEmpty(_currentSearch) 
+                    EmptyText.Text = string.IsNullOrEmpty(_currentSearch)
                         ? SharedUtilities.GetTranslation(_lang, "NoModsFound")
                         : SharedUtilities.GetTranslation(_lang, "NoModsMatchSearch");
                     _hasMorePages = false;
                     return;
                 }
 
-                // Check if there are more pages
-                if (response.Metadata != null)
-                {
-                    _hasMorePages = !response.Metadata.IsComplete;
-                }
-                else
-                {
-                    _hasMorePages = response.Records.Count >= 50;
-                }
-
                 var installedText = SharedUtilities.GetTranslation(_lang, "Installed");
-                
-                foreach (var record in response.Records)
+                foreach (var record in records)
                 {
-                    // Skip duplicates (important for infinite scroll and auto-load)
-                    if (_loadedModIds.Contains(record.Id))
-                    {
-                        continue;
-                    }
-
-                    if (!ShouldIncludeMod(record))
+                    if (_loadedModIds.Contains(record.Id) || !ShouldIncludeMod(record))
                     {
                         continue;
                     }
@@ -847,42 +838,54 @@ namespace FlairX_Mod_Manager.Pages
                         record,
                         installedText,
                         IsModInstalled(record.ProfileUrl ?? ""));
-
                     _mods.Add(viewModel);
-                    _loadedModIds.Add(record.Id); // Track to prevent duplicates
+                    _loadedModIds.Add(record.Id);
                 }
 
-                // If we have very few mods (likely due to NSFW filtering), load more automatically
-                if (_mods.Count < 20 && _hasMorePages)
+                if (!secondarySortActive && _mods.Count < 20 && _hasMorePages)
                 {
                     Logger.LogInfo($"Only {_mods.Count} mods loaded after NSFW filtering, auto-loading more pages...");
-                    await AutoLoadMorePagesAsync();
+                    await AutoLoadMorePagesAsync(loadGeneration);
+                    if (loadGeneration != _loadGeneration) return;
                 }
-                
+
                 if (_mods.Count == 0)
                 {
                     LoadingPanel.Visibility = Visibility.Collapsed;
                     EmptyPanel.Visibility = Visibility.Visible;
-                    EmptyText.Text = string.IsNullOrEmpty(_currentSearch) 
+                    EmptyText.Text = string.IsNullOrEmpty(_currentSearch)
                         ? SharedUtilities.GetTranslation(_lang, "NoModsFound")
                         : SharedUtilities.GetTranslation(_lang, "NoModsMatchSearch");
                     return;
                 }
 
-                // Load images asynchronously
                 _ = LoadImagesAsync();
-
                 LoadingPanel.Visibility = Visibility.Collapsed;
                 ModsGridView.Visibility = Visibility.Visible;
-                
-                // Show Load More button if there are more pages
-                LoadMoreMainModsButton.Visibility = _hasMorePages ? Visibility.Visible : Visibility.Collapsed;
+                LoadMoreMainModsButton.Visibility = GameBananaRecentSecondarySorter.CanLoadMore(
+                    secondarySort,
+                    _hasMorePages)
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
                 LoadMoreAuthorModsButton.Visibility = Visibility.Collapsed;
+
+                if (partialSecondaryPool)
+                {
+                    ConnectionErrorBar.Severity = InfoBarSeverity.Warning;
+                    ConnectionErrorBar.Title = GetTranslationOrDefault("Warning", "Partial results");
+                    ConnectionErrorBar.Message = GetTranslationOrDefault(
+                        "SecondarySort_PartialWarning",
+                        "Only the first 50 recent mods could be loaded; the available results were sorted.");
+                    ConnectionErrorBar.IsOpen = true;
+                }
             }
             catch (Exception ex)
             {
+                if (loadGeneration != _loadGeneration) return;
+
                 Logger.LogError("Failed to load mods from GameBanana", ex);
                 LoadingPanel.Visibility = Visibility.Collapsed;
+                ConnectionErrorBar.Severity = InfoBarSeverity.Error;
                 ConnectionErrorBar.Title = SharedUtilities.GetTranslation(_lang, "ConnectionErrorTitle");
                 ConnectionErrorBar.Message = SharedUtilities.GetTranslation(_lang, "ConnectionErrorMessage");
                 ConnectionErrorBar.IsOpen = true;
@@ -1172,22 +1175,31 @@ namespace FlairX_Mod_Manager.Pages
             }
         }
 
-        private async Task AutoLoadMorePagesAsync()
+        private async Task AutoLoadMorePagesAsync(int loadGeneration)
         {
             // Auto-load up to 5 more pages if we have too few mods (handles heavy NSFW filtering)
             int pagesLoaded = 0;
-            while (_mods.Count < 20 && _hasMorePages && pagesLoaded < 5)
+            while (loadGeneration == _loadGeneration &&
+                   _mods.Count < 20 &&
+                   _hasMorePages &&
+                   pagesLoaded < 5)
             {
-                await LoadMoreModsAsync();
+                await LoadMoreModsAsync(loadGeneration);
+                if (loadGeneration != _loadGeneration) return;
                 pagesLoaded++;
                 await Task.Delay(100); // Small delay between requests
             }
             Logger.LogInfo($"AutoLoadMorePages finished: {_mods.Count} mods after {pagesLoaded} extra pages");
         }
 
-        private async Task LoadMoreModsAsync()
+        private async Task LoadMoreModsAsync(int? expectedLoadGeneration = null)
         {
-            if (_isLoadingMore || !_hasMorePages) return;
+            if ((expectedLoadGeneration.HasValue && expectedLoadGeneration.Value != _loadGeneration) ||
+                _isLoadingMore ||
+                !GameBananaRecentSecondarySorter.CanLoadMore(_currentSecondarySort, _hasMorePages))
+            {
+                return;
+            }
             
             _isLoadingMore = true;
             
@@ -1195,31 +1207,8 @@ namespace FlairX_Mod_Manager.Pages
             {
                 _currentPage++;
                 
-                GameBananaService.ModListResponse? response;
-
-                if (_currentCategoryFilter == CategoryFilter.CharacterSkins)
-                {
-                    var categoryId = GetActiveCharacterCategoryId();
-                    response = await GameBananaService.GetModsByCategoryAsync(
-                        _gameTag,
-                        categoryId,
-                        _currentPage,
-                        _currentSearch,
-                        _currentSortOrder);
-                }
-                else
-                {
-                    response = await GameBananaService.GetModsAsync(
-                        _gameTag,
-                        _currentPage,
-                        _currentSearch,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null);
-                }
+                var response = await FetchModsPageAsync(_currentPage);
+                if (expectedLoadGeneration.HasValue && expectedLoadGeneration.Value != _loadGeneration) return;
 
                 if (response?.Records == null || response.Records.Count == 0)
                 {
@@ -1275,15 +1264,22 @@ namespace FlairX_Mod_Manager.Pages
                 _ = LoadImagesAsync();
                 
                 // Update Load More button visibility
-                LoadMoreMainModsButton.Visibility = _hasMorePages ? Visibility.Visible : Visibility.Collapsed;
+                LoadMoreMainModsButton.Visibility = GameBananaRecentSecondarySorter.CanLoadMore(
+                    _currentSecondarySort,
+                    _hasMorePages)
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
                 LoadMoreAuthorModsButton.Visibility = Visibility.Collapsed;
                 
                 // Check if we still need more content after loading
                 await Task.Delay(200); // Wait for layout to update
+                if (expectedLoadGeneration.HasValue && expectedLoadGeneration.Value != _loadGeneration) return;
                 CheckIfNeedMoreContent();
             }
             catch (Exception ex)
             {
+                if (expectedLoadGeneration.HasValue && expectedLoadGeneration.Value != _loadGeneration) return;
+
                 Logger.LogError("Failed to load more mods from GameBanana", ex);
                 _hasMorePages = false;
                 LoadMoreMainModsButton.Visibility = Visibility.Collapsed;
@@ -1298,7 +1294,9 @@ namespace FlairX_Mod_Manager.Pages
         private void CheckIfNeedMoreContent()
         {
             // If ScrollViewer doesn't have enough content to scroll, load more
-            if (_modsScrollViewer != null && _hasMorePages && !_isLoadingMore)
+            if (_modsScrollViewer != null &&
+                GameBananaRecentSecondarySorter.CanLoadMore(_currentSecondarySort, _hasMorePages) &&
+                !_isLoadingMore)
             {
                 var scrollableHeight = _modsScrollViewer.ScrollableHeight;
                 

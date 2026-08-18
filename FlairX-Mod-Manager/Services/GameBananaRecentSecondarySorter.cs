@@ -57,6 +57,9 @@ internal static class GameBananaRecentSecondarySorter
         return new GameBananaRecentPoolResult(ordered, secondPage is null);
     }
 
+    internal static bool CanLoadMore(GameBananaRecentSecondarySort sort, bool hasMorePages)
+        => sort == GameBananaRecentSecondarySort.None && hasMorePages;
+
     private static IReadOnlyList<GameBananaService.ModRecord> Order(
         IEnumerable<GameBananaService.ModRecord> records,
         Func<GameBananaService.ModRecord, int> metric)

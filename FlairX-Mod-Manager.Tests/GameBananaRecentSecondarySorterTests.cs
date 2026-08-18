@@ -169,6 +169,18 @@ public class GameBananaRecentSecondarySorterTests
         Assert.Equal(7, viewModel.CommentCount);
     }
 
+    [Theory]
+    [InlineData((int)GameBananaRecentSecondarySort.None, true)]
+    [InlineData((int)GameBananaRecentSecondarySort.MostDownloaded, false)]
+    [InlineData((int)GameBananaRecentSecondarySort.MostLiked, false)]
+    [InlineData((int)GameBananaRecentSecondarySort.MostCommented, false)]
+    public void CanLoadMore_AllowsOnlyNone(int sortValue, bool expected)
+    {
+        var sort = (GameBananaRecentSecondarySort)sortValue;
+
+        Assert.Equal(expected, GameBananaRecentSecondarySorter.CanLoadMore(sort, hasMorePages: true));
+    }
+
     private static GameBananaService.ModRecord Record(
         int id,
         int downloads = 0,
