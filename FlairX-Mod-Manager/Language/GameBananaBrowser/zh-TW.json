@@ -95,6 +95,11 @@
     "Sort_MostViewed": "最多瀏覽",
     "Sort_MostDownloaded": "最多下載",
     "Sort_MostCommented": "最多留言",
+    "SecondarySort_None": "不進行二次排序",
+    "SecondarySort_Downloads": "依下載量",
+    "SecondarySort_Likes": "依喜愛數",
+    "SecondarySort_Comments": "依評論數",
+    "SecondarySort_PartialWarning": "只能載入最近更新的前 50 個 Mod，已對現有結果排序。",
     "GB_LoadImages": "載入圖片",
     "GB_NoDescription": "暫無描述。"
 }

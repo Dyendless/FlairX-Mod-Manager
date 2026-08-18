@@ -95,6 +95,11 @@
     "Sort_MostViewed": "Most Viewed",
     "Sort_MostDownloaded": "Most Downloaded",
     "Sort_MostCommented": "Most Commented",
+    "SecondarySort_None": "No Secondary Sort",
+    "SecondarySort_Downloads": "Most Downloaded",
+    "SecondarySort_Likes": "Most Liked",
+    "SecondarySort_Comments": "Most Commented",
+    "SecondarySort_PartialWarning": "Only the first 50 recent mods could be loaded; the available results were sorted.",
     "GB_LoadImages": "Load Images",
     "GB_NoDescription": "No description available."
 }

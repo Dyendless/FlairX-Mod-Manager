@@ -18,6 +18,9 @@ public class GameBananaBrowserXamlTests
         Assert.DoesNotContain(
             document.Descendants(),
             element => (string?)element.Attribute(xaml + "Name") == "CharacterFilterComboBox");
+        Assert.DoesNotContain(
+            document.Descendants(),
+            element => (string?)element.Attribute(xaml + "Name") == "SecondarySortComboBox");
         Assert.Contains(
             document.Descendants(),
             element => (string?)element.Attribute(xaml + "Name") == "FiltersToolbarGrid");
@@ -30,6 +33,8 @@ public class GameBananaBrowserXamlTests
 
         Assert.Contains("CreateCharacterFilterComboBox();", codeBehind);
         Assert.Contains("private void CreateCharacterFilterComboBox()", codeBehind);
+        Assert.Contains("CreateSecondarySortComboBox();", codeBehind);
+        Assert.Contains("private void CreateSecondarySortComboBox()", codeBehind);
         Assert.DoesNotContain("CategoryFilterComboBox.Parent", codeBehind);
     }
 
