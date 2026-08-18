@@ -28,6 +28,9 @@ namespace FlairX_Mod_Manager.Pages
         private string? _currentSearch = null;
         private CategoryFilter _currentCategoryFilter = CategoryFilter.AllMods;
         private GameBananaService.CategorySortOrder _currentSortOrder = GameBananaService.CategorySortOrder.LatestUpdated;
+        private IReadOnlyList<GameBananaCharacterOption> _characterOptions = Array.Empty<GameBananaCharacterOption>();
+        private int? _selectedCharacterCategoryId;
+        private bool _isUpdatingCharacterSelection;
         private ObservableCollection<ModViewModel> _mods = new();
         private HashSet<int> _loadedModIds = new(); // Track loaded mod IDs to prevent duplicates
         private System.Collections.Generic.Dictionary<string, string> _lang = new();
@@ -139,7 +142,8 @@ namespace FlairX_Mod_Manager.Pages
             double ScrollOffset = 0,
             int Page = 1,
             CategoryFilter Filter = CategoryFilter.AllMods,
-            GameBananaService.CategorySortOrder SortOrder = GameBananaService.CategorySortOrder.LatestUpdated
+            GameBananaService.CategorySortOrder SortOrder = GameBananaService.CategorySortOrder.LatestUpdated,
+            int? CharacterCategoryId = null
         );
 
         private readonly Stack<NavigationEntry> _navigationStack = new();
@@ -295,6 +299,15 @@ namespace FlairX_Mod_Manager.Pages
             CategoryFilterComboBox.Items.Add(SharedUtilities.GetTranslation(_lang, "Filter_AllMods") ?? "All Mods");
             CategoryFilterComboBox.Items.Add(SharedUtilities.GetTranslation(_lang, "Filter_CharacterSkins") ?? "Character Skins");
             CategoryFilterComboBox.SelectedIndex = 0;
+
+            var parentCategoryId = GameBananaService.GetCharacterCategoryId(_gameTag);
+            ApplyCharacterOptions(
+                GameBananaCharacterFilter.BuildOptions(
+                    Array.Empty<GameBananaService.CategoryRecord>(),
+                    parentCategoryId,
+                    GetTranslationOrDefault("Filter_AllCharacters", "All Characters")),
+                parentCategoryId,
+                false);
 
             // Populate sort order ComboBox (only visible for Character Skins filter)
             SortOrderComboBox.Items.Clear();
@@ -1379,6 +1392,74 @@ namespace FlairX_Mod_Manager.Pages
             }
         }
 
+        private string GetTranslationOrDefault(string key, string fallback)
+        {
+            var value = SharedUtilities.GetTranslation(_lang, key);
+            return string.IsNullOrWhiteSpace(value) || value.StartsWith("[MISSING:", StringComparison.Ordinal)
+                ? fallback
+                : value;
+        }
+
+        private void ApplyCharacterOptions(
+            IReadOnlyList<GameBananaCharacterOption> options,
+            int? preferredCategoryId,
+            bool enableSelection)
+        {
+            var parentCategoryId = GameBananaService.GetCharacterCategoryId(_gameTag);
+            var resolvedCategoryId = GameBananaCharacterFilter.ResolveCategoryId(
+                parentCategoryId,
+                preferredCategoryId,
+                options);
+
+            _isUpdatingCharacterSelection = true;
+            try
+            {
+                _characterOptions = options;
+                CharacterFilterComboBox.ItemsSource = null;
+                CharacterFilterComboBox.ItemsSource = _characterOptions;
+                CharacterFilterComboBox.SelectedItem = _characterOptions.FirstOrDefault(
+                    option => option.CategoryId == resolvedCategoryId);
+                CharacterFilterComboBox.IsEnabled = enableSelection && _characterOptions.Count > 1;
+                _selectedCharacterCategoryId = resolvedCategoryId;
+            }
+            finally
+            {
+                _isUpdatingCharacterSelection = false;
+            }
+        }
+
+        private async Task LoadCharacterOptionsAsync(int? preferredCategoryId = null)
+        {
+            var parentCategoryId = GameBananaService.GetCharacterCategoryId(_gameTag);
+            var allCharactersLabel = GetTranslationOrDefault("Filter_AllCharacters", "All Characters");
+            var fallbackOptions = GameBananaCharacterFilter.BuildOptions(
+                Array.Empty<GameBananaService.CategoryRecord>(),
+                parentCategoryId,
+                allCharactersLabel);
+
+            ApplyCharacterOptions(fallbackOptions, preferredCategoryId ?? parentCategoryId, false);
+
+            try
+            {
+                var categories = await GameBananaService.GetCharacterCategoriesAsync(_gameTag);
+                if (categories is not { Count: > 0 })
+                {
+                    Logger.LogWarning($"No GameBanana character categories were returned for {_gameTag}; using the parent category.");
+                    return;
+                }
+
+                var options = GameBananaCharacterFilter.BuildOptions(
+                    categories,
+                    parentCategoryId,
+                    allCharactersLabel);
+                ApplyCharacterOptions(options, preferredCategoryId ?? parentCategoryId, true);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Failed to load GameBanana character options for {_gameTag}; using the parent category.", ex);
+            }
+        }
+
         private void CategoryFilterComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (sender is ComboBox cb)
@@ -1387,10 +1468,21 @@ namespace FlairX_Mod_Manager.Pages
                     ? CategoryFilter.CharacterSkins
                     : CategoryFilter.AllMods;
 
-                // Sort ComboBox only makes sense for Character Skins (apiv6 ByCategory supports it)
-                SortOrderComboBox.Visibility = _currentCategoryFilter == CategoryFilter.CharacterSkins
+                var characterFilterVisibility = _currentCategoryFilter == CategoryFilter.CharacterSkins
                     ? Visibility.Visible
                     : Visibility.Collapsed;
+                CharacterFilterComboBox.Visibility = characterFilterVisibility;
+                SortOrderComboBox.Visibility = characterFilterVisibility;
+
+                if (_currentCategoryFilter == CategoryFilter.CharacterSkins)
+                {
+                    _selectedCharacterCategoryId = GameBananaService.GetCharacterCategoryId(_gameTag);
+                    _ = LoadCharacterOptionsAsync();
+                }
+                else
+                {
+                    _selectedCharacterCategoryId = null;
+                }
 
                 _currentSortOrder = GameBananaService.CategorySortOrder.LatestUpdated;
                 SortOrderComboBox.SelectedIndex = 0;
@@ -1400,6 +1492,20 @@ namespace FlairX_Mod_Manager.Pages
                 _currentPage = 1;
                 _ = LoadModsAsync();
             }
+        }
+
+        private void CharacterFilterComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_isUpdatingCharacterSelection ||
+                _currentCategoryFilter != CategoryFilter.CharacterSkins ||
+                sender is not ComboBox { SelectedItem: GameBananaCharacterOption option })
+            {
+                return;
+            }
+
+            _selectedCharacterCategoryId = option.CategoryId;
+            _currentPage = 1;
+            _ = LoadModsAsync();
         }
 
         private void SortOrderComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
