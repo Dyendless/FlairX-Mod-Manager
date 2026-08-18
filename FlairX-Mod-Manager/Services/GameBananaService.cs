@@ -232,6 +232,19 @@ namespace FlairX_Mod_Manager.Services
             public string? File100 { get; set; }
         }
 
+        internal static string? GetListPreviewImageUrl(ImageInfo image)
+        {
+            var fileName = !string.IsNullOrWhiteSpace(image.File530) ? image.File530
+                : !string.IsNullOrWhiteSpace(image.File220) ? image.File220
+                : !string.IsNullOrWhiteSpace(image.File100) ? image.File100
+                : image.File;
+
+            if (string.IsNullOrWhiteSpace(image.BaseUrl) || string.IsNullOrWhiteSpace(fileName))
+                return null;
+
+            return $"{image.BaseUrl.TrimEnd('/')}/{fileName}";
+        }
+
         public class ModCategory
         {
             [JsonPropertyName("_idRow")]

@@ -789,7 +789,7 @@ namespace FlairX_Mod_Manager.Pages
                     var image = record.PreviewMedia?.Images?.FirstOrDefault();
                     if (image != null)
                     {
-                        viewModel.ImageUrl = $"{image.BaseUrl}/{image.File220 ?? image.File100 ?? image.File}";
+                        viewModel.ImageUrl = GameBananaService.GetListPreviewImageUrl(image);
                     }
 
                     _mods.Add(viewModel);
@@ -975,7 +975,7 @@ namespace FlairX_Mod_Manager.Pages
                                 if (modDetails.PreviewMedia?.Images?.Any() == true)
                                 {
                                     var image = modDetails.PreviewMedia.Images.First();
-                                    viewModel.ImageUrl = $"{image.BaseUrl}/{image.File220 ?? image.File100 ?? image.File}";
+                                    viewModel.ImageUrl = GameBananaService.GetListPreviewImageUrl(image);
                                 }
                                 
                                 return viewModel;
@@ -1218,7 +1218,7 @@ namespace FlairX_Mod_Manager.Pages
 
                     var image = record.PreviewMedia?.Images?.FirstOrDefault();
                     if (image != null)
-                        viewModel.ImageUrl = $"{image.BaseUrl}/{image.File220 ?? image.File100 ?? image.File}";
+                        viewModel.ImageUrl = GameBananaService.GetListPreviewImageUrl(image);
 
                     _mods.Add(viewModel);
                     _loadedModIds.Add(record.Id);
