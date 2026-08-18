@@ -149,7 +149,8 @@ namespace FlairX_Mod_Manager.Pages
             int Page = 1,
             CategoryFilter Filter = CategoryFilter.AllMods,
             GameBananaService.CategorySortOrder SortOrder = GameBananaService.CategorySortOrder.LatestUpdated,
-            int? CharacterCategoryId = null
+            int? CharacterCategoryId = null,
+            GameBananaRecentSecondarySort SecondarySort = GameBananaRecentSecondarySort.None
         );
 
         private readonly Stack<NavigationEntry> _navigationStack = new();
@@ -1649,7 +1650,8 @@ namespace FlairX_Mod_Manager.Pages
                         Page: _currentPage,
                         Filter: _currentCategoryFilter,
                         SortOrder: _currentSortOrder,
-                        CharacterCategoryId: _selectedCharacterCategoryId));
+                        CharacterCategoryId: _selectedCharacterCategoryId,
+                        SecondarySort: _currentSecondarySort));
                     UpdateBackButtonIcon();
                 }
                 _currentSearch = null;
@@ -1693,7 +1695,8 @@ namespace FlairX_Mod_Manager.Pages
                     Page: _currentPage,
                     Filter: _currentCategoryFilter,
                     SortOrder: _currentSortOrder,
-                    CharacterCategoryId: _selectedCharacterCategoryId));
+                    CharacterCategoryId: _selectedCharacterCategoryId,
+                    SecondarySort: _currentSecondarySort));
                 UpdateBackButtonIcon();
             }
             _currentSearch = newSearch;
@@ -1715,7 +1718,8 @@ namespace FlairX_Mod_Manager.Pages
                     Page: _currentPage,
                     Filter: _currentCategoryFilter,
                     SortOrder: _currentSortOrder,
-                    CharacterCategoryId: _selectedCharacterCategoryId));
+                    CharacterCategoryId: _selectedCharacterCategoryId,
+                    SecondarySort: _currentSecondarySort));
                 UpdateBackButtonIcon();
             }
             _currentSearch = newSearch;
@@ -2079,6 +2083,7 @@ namespace FlairX_Mod_Manager.Pages
                         if (entry.Search != _currentSearch || entry.Page != _currentPage || 
                             entry.Filter != _currentCategoryFilter || entry.SortOrder != _currentSortOrder ||
                             entry.CharacterCategoryId != _selectedCharacterCategoryId ||
+                            entry.SecondarySort != _currentSecondarySort ||
                             _mods.Count == 0)
                         {
                             _currentSearch = entry.Search;
@@ -2109,6 +2114,28 @@ namespace FlairX_Mod_Manager.Pages
                                 _ => 0
                             };
                             SortOrderComboBox.SelectionChanged += SortOrderComboBox_SelectionChanged;
+
+                            _currentSecondarySort = GameBananaRecentSecondarySorter.Normalize(
+                                entry.Filter == CategoryFilter.CharacterSkins,
+                                entry.SortOrder,
+                                entry.Search,
+                                entry.SecondarySort);
+                            _isUpdatingSecondarySort = true;
+                            try
+                            {
+                                SecondarySortComboBox.SelectedIndex = _currentSecondarySort switch
+                                {
+                                    GameBananaRecentSecondarySort.MostDownloaded => 1,
+                                    GameBananaRecentSecondarySort.MostLiked => 2,
+                                    GameBananaRecentSecondarySort.MostCommented => 3,
+                                    _ => 0
+                                };
+                            }
+                            finally
+                            {
+                                _isUpdatingSecondarySort = false;
+                            }
+                            UpdateSecondarySortAvailability(resetIfIneligible: false);
 
                             if (entry.Filter == CategoryFilter.CharacterSkins)
                             {
@@ -2347,7 +2374,8 @@ namespace FlairX_Mod_Manager.Pages
                             Page: _currentPage,
                             Filter: _currentCategoryFilter,
                             SortOrder: _currentSortOrder,
-                            CharacterCategoryId: _selectedCharacterCategoryId));
+                            CharacterCategoryId: _selectedCharacterCategoryId,
+                            SecondarySort: _currentSecondarySort));
                     }
                     else if (_currentState == NavigationState.ModDetails && _currentModDetails != null)
                     {
@@ -2652,7 +2680,8 @@ namespace FlairX_Mod_Manager.Pages
                             Page: _currentPage,
                             Filter: _currentCategoryFilter,
                             SortOrder: _currentSortOrder,
-                            CharacterCategoryId: _selectedCharacterCategoryId));
+                            CharacterCategoryId: _selectedCharacterCategoryId,
+                            SecondarySort: _currentSecondarySort));
                     }
                     else if (_currentState == NavigationState.AuthorMods && _currentAuthorId.HasValue)
                     {
@@ -3801,7 +3830,8 @@ namespace FlairX_Mod_Manager.Pages
                                 Page: _currentPage,
                                 Filter: _currentCategoryFilter,
                                 SortOrder: _currentSortOrder,
-                                CharacterCategoryId: _selectedCharacterCategoryId));
+                                CharacterCategoryId: _selectedCharacterCategoryId,
+                                SecondarySort: _currentSecondarySort));
                         }
                         else if (_currentState == NavigationState.ModDetails && _currentModDetails != null)
                         {

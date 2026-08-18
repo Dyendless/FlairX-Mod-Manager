@@ -38,6 +38,20 @@ public class GameBananaBrowserXamlTests
         Assert.DoesNotContain("CategoryFilterComboBox.Parent", codeBehind);
     }
 
+    [Fact]
+    public void NavigationState_PreservesEligibleSecondarySort()
+    {
+        var codeBehindPath = FindRepositoryFile(
+            "FlairX-Mod-Manager",
+            "Pages",
+            "GameBananaBrowserUserControl.xaml.cs");
+        var codeBehind = File.ReadAllText(codeBehindPath);
+
+        Assert.Contains("GameBananaRecentSecondarySort SecondarySort", codeBehind);
+        Assert.Contains("SecondarySort: _currentSecondarySort", codeBehind);
+        Assert.Contains("entry.SecondarySort", codeBehind);
+    }
+
     private static string FindRepositoryFile(params string[] segments)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
