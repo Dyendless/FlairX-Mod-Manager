@@ -31,6 +31,7 @@ namespace FlairX_Mod_Manager.Pages
         private IReadOnlyList<GameBananaCharacterOption> _characterOptions = Array.Empty<GameBananaCharacterOption>();
         private int? _selectedCharacterCategoryId;
         private bool _isUpdatingCharacterSelection;
+        private ComboBox CharacterFilterComboBox = null!;
         private ObservableCollection<ModViewModel> _mods = new();
         private HashSet<int> _loadedModIds = new(); // Track loaded mod IDs to prevent duplicates
         private System.Collections.Generic.Dictionary<string, string> _lang = new();
@@ -261,6 +262,7 @@ namespace FlairX_Mod_Manager.Pages
         public GameBananaBrowserUserControl(string gameTag, string? modUrl = null, string? sourceModPath = null)
         {
             InitializeComponent();
+            CreateCharacterFilterComboBox();
             _gameTag = gameTag;
             _sourceModPath = sourceModPath;
             
@@ -350,6 +352,21 @@ namespace FlairX_Mod_Manager.Pages
                 // Load mods (sections will be extracted from loaded mods)
                 _ = LoadModsAsync();
             }
+        }
+
+        private void CreateCharacterFilterComboBox()
+        {
+            CharacterFilterComboBox = new ComboBox
+            {
+                MinWidth = 180,
+                MaxWidth = 260,
+                Margin = new Thickness(0, 0, 12, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+                Visibility = Visibility.Collapsed
+            };
+            Grid.SetColumn(CharacterFilterComboBox, 1);
+            CharacterFilterComboBox.SelectionChanged += CharacterFilterComboBox_SelectionChanged;
+            FiltersToolbarGrid.Children.Add(CharacterFilterComboBox);
         }
 
         private void GameBananaBrowserUserControl_Loaded(object sender, RoutedEventArgs e)
@@ -1424,10 +1441,21 @@ namespace FlairX_Mod_Manager.Pages
             try
             {
                 _characterOptions = options;
-                CharacterFilterComboBox.ItemsSource = null;
-                CharacterFilterComboBox.ItemsSource = _characterOptions;
-                CharacterFilterComboBox.SelectedItem = _characterOptions.FirstOrDefault(
-                    option => option.CategoryId == resolvedCategoryId);
+                CharacterFilterComboBox.Items.Clear();
+                foreach (var option in _characterOptions)
+                {
+                    CharacterFilterComboBox.Items.Add(new ComboBoxItem
+                    {
+                        Content = option.DisplayName,
+                        Tag = option
+                    });
+                }
+
+                CharacterFilterComboBox.SelectedItem = CharacterFilterComboBox.Items
+                    .OfType<ComboBoxItem>()
+                    .FirstOrDefault(item =>
+                        item.Tag is GameBananaCharacterOption option &&
+                        option.CategoryId == resolvedCategoryId);
                 CharacterFilterComboBox.IsEnabled = enableSelection && _characterOptions.Count > 1;
                 _selectedCharacterCategoryId = resolvedCategoryId;
             }
@@ -1507,7 +1535,7 @@ namespace FlairX_Mod_Manager.Pages
         {
             if (_isUpdatingCharacterSelection ||
                 _currentCategoryFilter != CategoryFilter.CharacterSkins ||
-                sender is not ComboBox { SelectedItem: GameBananaCharacterOption option })
+                sender is not ComboBox { SelectedItem: ComboBoxItem { Tag: GameBananaCharacterOption option } })
             {
                 return;
             }
