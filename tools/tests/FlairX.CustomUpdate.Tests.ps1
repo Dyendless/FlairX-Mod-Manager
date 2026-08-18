@@ -76,3 +76,48 @@ Describe 'Get-FlairXBackupArguments' {
         ($arguments -join ' ') | Should Match '/XD E:\\flairx\\backups'
     }
 }
+
+Describe 'Test-FlairXTemporaryPath' {
+    It 'accepts only a named custom-update directory below system temp' {
+        $safePath = Join-Path ([IO.Path]::GetTempPath()) 'FlairX-CustomUpdate-0123456789abcdef'
+
+        Test-FlairXTemporaryPath $safePath | Should Be $true
+        Test-FlairXTemporaryPath 'E:\flairx' | Should Be $false
+        Test-FlairXTemporaryPath ([IO.Path]::GetTempPath()) | Should Be $false
+    }
+}
+
+Describe 'Update-CustomFlairX safety contract' {
+    $scriptPath = Join-Path $PSScriptRoot '..\Update-CustomFlairX.ps1'
+    $scriptText = if (Test-Path -LiteralPath $scriptPath) {
+        Get-Content -LiteralPath $scriptPath -Raw
+    } else {
+        ''
+    }
+
+    It 'uses only the fork maintenance branch' {
+        $scriptText | Should Match 'Assert-FlairXPushTarget'
+        $scriptText | Should Match 'custom/gamebanana-enhancements'
+    }
+
+    It 'orders tests and build before deployment changes' {
+        $scriptText.IndexOf('    Test = {') | Should BeLessThan $scriptText.IndexOf('    Backup = {')
+        $scriptText.IndexOf('    Build = {') | Should BeLessThan $scriptText.IndexOf('    Deploy = {')
+        $scriptText.IndexOf('    Build = {') | Should BeGreaterThan -1
+    }
+
+    It 'supports side-effect-free preview' {
+        $scriptText | Should Match '\[switch\]\$WhatIf'
+        $scriptText | Should Match 'Invoke-FlairXUpdatePipeline.+Preview'
+    }
+
+    It 'guards temporary-directory cleanup' {
+        $scriptText | Should Match 'FlairX-CustomUpdate-'
+        $scriptText | Should Match 'Test-FlairXTemporaryPath'
+    }
+
+    It 'does not mirror-delete the installation root' {
+        $scriptText | Should Not Match 'robocopy[^\r\n]+/MIR'
+        $scriptText | Should Not Match 'git\s+reset\s+--hard'
+    }
+}

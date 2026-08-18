@@ -85,9 +85,29 @@ function Get-FlairXBackupArguments {
     )
 }
 
+function Test-FlairXTemporaryPath {
+    param([Parameter(Mandatory)][string]$Path)
+
+    try {
+        $fullPath = [IO.Path]::GetFullPath($Path).TrimEnd('\')
+        $tempRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\')
+        $parent = [IO.Directory]::GetParent($fullPath)
+        if ($null -eq $parent) {
+            return $false
+        }
+
+        $leaf = [IO.Path]::GetFileName($fullPath)
+        return $parent.FullName.TrimEnd('\') -eq $tempRoot -and
+            $leaf.StartsWith('FlairX-CustomUpdate-', [StringComparison]::Ordinal)
+    } catch {
+        return $false
+    }
+}
+
 Export-ModuleMember -Function `
     Resolve-FlairXInstallRoot, `
     ConvertFrom-FlairXReleaseJson, `
     Assert-FlairXPushTarget, `
     Invoke-FlairXUpdatePipeline, `
-    Get-FlairXBackupArguments
+    Get-FlairXBackupArguments, `
+    Test-FlairXTemporaryPath
