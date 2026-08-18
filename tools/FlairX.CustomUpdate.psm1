@@ -50,7 +50,44 @@ function Assert-FlairXPushTarget {
     }
 }
 
+function Invoke-FlairXUpdatePipeline {
+    param(
+        [Parameter(Mandatory)][System.Collections.IDictionary]$Steps,
+        [switch]$Preview
+    )
+
+    if ($Preview) {
+        return @($Steps.Keys)
+    }
+
+    foreach ($name in $Steps.Keys) {
+        Write-Host "==> $name"
+        & $Steps[$name]
+    }
+}
+
+function Get-FlairXBackupArguments {
+    param(
+        [Parameter(Mandatory)][string]$InstallRoot,
+        [Parameter(Mandatory)][string]$BackupRoot
+    )
+
+    return @(
+        $InstallRoot,
+        '__DESTINATION__',
+        '/E',
+        '/COPY:DAT',
+        '/DCOPY:DAT',
+        '/R:2',
+        '/W:1',
+        '/XD',
+        $BackupRoot
+    )
+}
+
 Export-ModuleMember -Function `
     Resolve-FlairXInstallRoot, `
     ConvertFrom-FlairXReleaseJson, `
-    Assert-FlairXPushTarget
+    Assert-FlairXPushTarget, `
+    Invoke-FlairXUpdatePipeline, `
+    Get-FlairXBackupArguments

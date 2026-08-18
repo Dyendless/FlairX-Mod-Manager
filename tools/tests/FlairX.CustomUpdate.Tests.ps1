@@ -41,3 +41,38 @@ Describe 'Assert-FlairXPushTarget' {
         { Assert-FlairXPushTarget fork main } | Should Throw
     }
 }
+
+Describe 'Invoke-FlairXUpdatePipeline' {
+    It 'stops before deployment when a validation stage fails' {
+        $calls = New-Object System.Collections.ArrayList
+        $steps = [ordered]@{
+            Sync = { [void]$calls.Add('Sync') }
+            Test = { [void]$calls.Add('Test'); throw 'failed' }
+            Deploy = { [void]$calls.Add('Deploy') }
+        }
+
+        { Invoke-FlairXUpdatePipeline $steps } | Should Throw
+        ($calls -join ',') | Should Be 'Sync,Test'
+    }
+
+    It 'runs no stage in preview mode' {
+        $calls = New-Object System.Collections.ArrayList
+        $steps = [ordered]@{
+            Sync = { [void]$calls.Add('Sync') }
+            Deploy = { [void]$calls.Add('Deploy') }
+        }
+
+        $names = Invoke-FlairXUpdatePipeline $steps -Preview
+
+        $calls.Count | Should Be 0
+        ($names -join ',') | Should Be 'Sync,Deploy'
+    }
+}
+
+Describe 'Get-FlairXBackupArguments' {
+    It 'excludes the backup directory' {
+        $arguments = Get-FlairXBackupArguments 'E:\flairx' 'E:\flairx\backups'
+
+        ($arguments -join ' ') | Should Match '/XD E:\\flairx\\backups'
+    }
+}
