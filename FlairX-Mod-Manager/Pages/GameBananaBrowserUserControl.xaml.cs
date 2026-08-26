@@ -35,7 +35,7 @@ namespace FlairX_Mod_Manager.Pages
         private bool _isUpdatingCharacterSelection;
         private ComboBox CharacterFilterComboBox = null!;
         private ComboBox SecondarySortComboBox = null!;
-        private GameBananaRecentSecondarySort _currentSecondarySort = GameBananaRecentSecondarySort.None;
+        private GameBananaRecentSecondarySort _currentSecondarySort = GameBananaRecentSecondarySort.LatestUpdated;
         private bool _isUpdatingSecondarySort;
         private ObservableCollection<ModViewModel> _mods = new();
         private HashSet<int> _loadedModIds = new(); // Track loaded mod IDs to prevent duplicates
@@ -150,7 +150,7 @@ namespace FlairX_Mod_Manager.Pages
             CategoryFilter Filter = CategoryFilter.AllMods,
             GameBananaService.CategorySortOrder SortOrder = GameBananaService.CategorySortOrder.LatestUpdated,
             int? CharacterCategoryId = null,
-            GameBananaRecentSecondarySort SecondarySort = GameBananaRecentSecondarySort.None
+            GameBananaRecentSecondarySort SecondarySort = GameBananaRecentSecondarySort.LatestUpdated
         );
 
         private readonly Stack<NavigationEntry> _navigationStack = new();
@@ -762,7 +762,7 @@ namespace FlairX_Mod_Manager.Pages
                     _currentSortOrder,
                     _currentSearch,
                     _currentSecondarySort);
-                var secondarySortActive = secondarySort != GameBananaRecentSecondarySort.None;
+                var secondarySortActive = secondarySort != GameBananaRecentSecondarySort.LatestUpdated;
                 var firstPage = secondarySortActive ? 1 : _currentPage;
                 var response = await FetchModsPageAsync(firstPage);
                 if (loadGeneration != _loadGeneration) return;
@@ -1595,7 +1595,7 @@ namespace FlairX_Mod_Manager.Pages
                 1 => GameBananaRecentSecondarySort.MostDownloaded,
                 2 => GameBananaRecentSecondarySort.MostLiked,
                 3 => GameBananaRecentSecondarySort.MostCommented,
-                _ => GameBananaRecentSecondarySort.None
+                _ => GameBananaRecentSecondarySort.LatestUpdated
             };
             _currentSecondarySort = GameBananaRecentSecondarySorter.Normalize(
                 _currentCategoryFilter == CategoryFilter.CharacterSkins,

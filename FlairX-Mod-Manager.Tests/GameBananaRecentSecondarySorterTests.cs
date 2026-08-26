@@ -7,6 +7,32 @@ namespace FlairX_Mod_Manager.Tests;
 
 public class GameBananaRecentSecondarySorterTests
 {
+    private static readonly DateTimeOffset Now =
+        new(2026, 8, 26, 12, 0, 0, TimeSpan.Zero);
+
+    [Theory]
+    [InlineData((int)GameBananaUpdatedTimeRange.Last30Days, 30)]
+    [InlineData((int)GameBananaUpdatedTimeRange.Last90Days, 90)]
+    [InlineData((int)GameBananaUpdatedTimeRange.Last180Days, 180)]
+    public void GetCutoffUnixSeconds_UsesSelectedRange(
+        int rangeValue,
+        int expectedDays)
+    {
+        var range = (GameBananaUpdatedTimeRange)rangeValue;
+
+        Assert.Equal(
+            Now.AddDays(-expectedDays).ToUnixTimeSeconds(),
+            GameBananaRecentSecondarySorter.GetCutoffUnixSeconds(range, Now));
+    }
+
+    [Fact]
+    public void GetCutoffUnixSeconds_UnlimitedHasNoCutoff()
+    {
+        Assert.Null(GameBananaRecentSecondarySorter.GetCutoffUnixSeconds(
+            GameBananaUpdatedTimeRange.Unlimited,
+            Now));
+    }
+
     [Theory]
     [InlineData((int)GameBananaRecentSecondarySort.MostDownloaded, 30, 20, 10)]
     [InlineData((int)GameBananaRecentSecondarySort.MostLiked, 3, 2, 1)]
@@ -56,7 +82,7 @@ public class GameBananaRecentSecondarySorterTests
         var result = GameBananaRecentSecondarySorter.Build(
             first,
             second,
-            GameBananaRecentSecondarySort.None)!;
+            GameBananaRecentSecondarySort.LatestUpdated)!;
 
         Assert.Equal(100, result.Records.Count);
         Assert.Equal(100, result.Records.Select(record => record.Id).Distinct().Count());
@@ -69,7 +95,7 @@ public class GameBananaRecentSecondarySorterTests
         var result = GameBananaRecentSecondarySorter.Build(
             [Record(8), Record(3)],
             [Record(5)],
-            GameBananaRecentSecondarySort.None)!;
+            GameBananaRecentSecondarySort.LatestUpdated)!;
 
         Assert.Equal([8, 3, 5], result.Records.Select(record => record.Id));
     }
@@ -118,7 +144,7 @@ public class GameBananaRecentSecondarySorterTests
         string? search)
     {
         Assert.Equal(
-            GameBananaRecentSecondarySort.None,
+            GameBananaRecentSecondarySort.LatestUpdated,
             GameBananaRecentSecondarySorter.Normalize(
                 isCharacterSkins,
                 primarySort,
@@ -170,7 +196,7 @@ public class GameBananaRecentSecondarySorterTests
     }
 
     [Theory]
-    [InlineData((int)GameBananaRecentSecondarySort.None, true)]
+    [InlineData((int)GameBananaRecentSecondarySort.LatestUpdated, true)]
     [InlineData((int)GameBananaRecentSecondarySort.MostDownloaded, false)]
     [InlineData((int)GameBananaRecentSecondarySort.MostLiked, false)]
     [InlineData((int)GameBananaRecentSecondarySort.MostCommented, false)]

@@ -4,9 +4,17 @@ using System.Linq;
 
 namespace FlairX_Mod_Manager.Services;
 
+internal enum GameBananaUpdatedTimeRange
+{
+    Last30Days,
+    Last90Days,
+    Last180Days,
+    Unlimited
+}
+
 internal enum GameBananaRecentSecondarySort
 {
-    None,
+    LatestUpdated,
     MostDownloaded,
     MostLiked,
     MostCommented
@@ -18,6 +26,16 @@ internal sealed record GameBananaRecentPoolResult(
 
 internal static class GameBananaRecentSecondarySorter
 {
+    internal static long? GetCutoffUnixSeconds(
+        GameBananaUpdatedTimeRange range,
+        DateTimeOffset nowUtc) => range switch
+    {
+        GameBananaUpdatedTimeRange.Last30Days => nowUtc.AddDays(-30).ToUnixTimeSeconds(),
+        GameBananaUpdatedTimeRange.Last90Days => nowUtc.AddDays(-90).ToUnixTimeSeconds(),
+        GameBananaUpdatedTimeRange.Last180Days => nowUtc.AddDays(-180).ToUnixTimeSeconds(),
+        _ => null
+    };
+
     internal static GameBananaRecentSecondarySort Normalize(
         bool isCharacterSkins,
         GameBananaService.CategorySortOrder primarySort,
@@ -28,7 +46,7 @@ internal static class GameBananaRecentSecondarySorter
                primarySort == GameBananaService.CategorySortOrder.LatestUpdated &&
                string.IsNullOrWhiteSpace(search)
             ? requested
-            : GameBananaRecentSecondarySort.None;
+            : GameBananaRecentSecondarySort.LatestUpdated;
     }
 
     internal static GameBananaRecentPoolResult? Build(
@@ -58,7 +76,7 @@ internal static class GameBananaRecentSecondarySorter
     }
 
     internal static bool CanLoadMore(GameBananaRecentSecondarySort sort, bool hasMorePages)
-        => sort == GameBananaRecentSecondarySort.None && hasMorePages;
+        => sort == GameBananaRecentSecondarySort.LatestUpdated && hasMorePages;
 
     private static IReadOnlyList<GameBananaService.ModRecord> Order(
         IEnumerable<GameBananaService.ModRecord> records,
