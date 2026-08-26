@@ -882,6 +882,25 @@ namespace FlairX_Mod_Manager.Pages
                         : firstPageRecords.Count >= 50;
                 }
 
+                if (partialWindow)
+                {
+                    ConnectionErrorBar.Severity = InfoBarSeverity.Warning;
+                    ConnectionErrorBar.Title = GetTranslationOrDefault("Warning", "Partial results");
+                    ConnectionErrorBar.Message = GetTranslationOrDefault(
+                        "RecentWindow_PartialWarning",
+                        "A later GameBanana page could not be loaded; the available results are shown.");
+                    ConnectionErrorBar.IsOpen = true;
+                }
+                else if (cappedWindow)
+                {
+                    ConnectionErrorBar.Severity = InfoBarSeverity.Warning;
+                    ConnectionErrorBar.Title = GetTranslationOrDefault("Warning", "Results limited");
+                    ConnectionErrorBar.Message = GetTranslationOrDefault(
+                        "RecentWindow_CappedWarning",
+                        "Results reached the safety limit of 10 pages or 500 records.");
+                    ConnectionErrorBar.IsOpen = true;
+                }
+
                 if (records.Count == 0)
                 {
                     LoadingPanel.Visibility = Visibility.Collapsed;
@@ -934,25 +953,6 @@ namespace FlairX_Mod_Manager.Pages
                     ? Visibility.Visible
                     : Visibility.Collapsed;
                 LoadMoreAuthorModsButton.Visibility = Visibility.Collapsed;
-
-                if (partialWindow)
-                {
-                    ConnectionErrorBar.Severity = InfoBarSeverity.Warning;
-                    ConnectionErrorBar.Title = GetTranslationOrDefault("Warning", "Partial results");
-                    ConnectionErrorBar.Message = GetTranslationOrDefault(
-                        "RecentWindow_PartialWarning",
-                        "A later GameBanana page could not be loaded; the available results are shown.");
-                    ConnectionErrorBar.IsOpen = true;
-                }
-                else if (cappedWindow)
-                {
-                    ConnectionErrorBar.Severity = InfoBarSeverity.Warning;
-                    ConnectionErrorBar.Title = GetTranslationOrDefault("Warning", "Results limited");
-                    ConnectionErrorBar.Message = GetTranslationOrDefault(
-                        "RecentWindow_CappedWarning",
-                        "Results reached the safety limit of 10 pages or 500 records.");
-                    ConnectionErrorBar.IsOpen = true;
-                }
             }
             catch (Exception ex)
             {

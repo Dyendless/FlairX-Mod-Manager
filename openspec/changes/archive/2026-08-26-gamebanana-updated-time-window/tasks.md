@@ -24,8 +24,8 @@
 
 ## 4. Verification, deployment, and completion
 
-- [ ] 4.1 Run OpenSpec strict validation, whitespace checks, and the complete x64 Release test suite.
-- [ ] 4.2 Build `FlairX-Mod-Manager.csproj` in x64 Release and verify matching DLL/PDB/PRI timestamps and paths.
-- [ ] 4.3 Stop the installed manager, back up the installed DLL/PDB/PRI under `E:\flairx\backups`, deploy the same-build artifact set, and verify source/target SHA-256 hashes.
-- [ ] 4.4 Restart through the FlairX launcher and perform the focused installed-app acceptance path.
-- [ ] 4.5 Mark OpenSpec tasks complete, archive the completed change into durable specs, rerun strict validation/status checks, and create the final implementation commit.
+- [x] 4.1 Run OpenSpec strict validation, whitespace checks, and the complete x64 Release test suite.
+- [x] 4.2 Build `FlairX-Mod-Manager.csproj` in x64 Release and verify matching DLL/PDB/PRI timestamps and paths.
+- [x] 4.3 Stop the installed manager, back up the installed DLL/PDB/PRI under `E:\flairx\backups`, deploy the same-build artifact set, and verify source/target SHA-256 hashes.
+- [x] 4.4 Restart through the FlairX launcher and verify clean startup logs; focused UI acceptance was explicitly waived by the user.
+- [x] 4.5 Mark OpenSpec tasks complete, archive the completed change into durable specs, rerun strict validation/status checks, and create the final implementation commit.

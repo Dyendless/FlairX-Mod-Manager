@@ -96,6 +96,25 @@ public class GameBananaBrowserXamlTests
         Assert.Contains("while (decision.ShouldContinue)", codeBehind);
     }
 
+    [Fact]
+    public void RecentWindowNotice_IsAppliedBeforeEmptyResultReturn()
+    {
+        var codeBehindPath = FindRepositoryFile(
+            "FlairX-Mod-Manager",
+            "Pages",
+            "GameBananaBrowserUserControl.xaml.cs");
+        var codeBehind = File.ReadAllText(codeBehindPath);
+
+        var noticeIndex = codeBehind.IndexOf("if (partialWindow)", StringComparison.Ordinal);
+        var emptyResultIndex = codeBehind.IndexOf("if (records.Count == 0)", StringComparison.Ordinal);
+
+        Assert.True(noticeIndex >= 0, "The recent-window notice handling is missing.");
+        Assert.True(emptyResultIndex >= 0, "The empty-result handling is missing.");
+        Assert.True(
+            noticeIndex < emptyResultIndex,
+            "Partial or capped window notices must be shown before an empty-result early return.");
+    }
+
     private static string FindRepositoryFile(params string[] segments)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
