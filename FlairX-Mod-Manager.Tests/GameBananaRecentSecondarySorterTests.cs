@@ -160,6 +160,54 @@ public class GameBananaRecentSecondarySorterTests
     }
 
     [Theory]
+    [InlineData((int)GameBananaRecentSecondarySort.LatestUpdated, 3)]
+    [InlineData((int)GameBananaRecentSecondarySort.MostLiked, 2)]
+    [InlineData((int)GameBananaRecentSecondarySort.MostDownloaded, 1)]
+    [InlineData((int)GameBananaRecentSecondarySort.MostCommented, 2)]
+    public void FilterAndOrder_RanksSelectedField(int sortValue, int expectedFirstId)
+    {
+        var records = new[]
+        {
+            Record(1, downloads: 30, likes: 1, comments: 1, updated: 100),
+            Record(2, downloads: 20, likes: 30, comments: 30, updated: 200),
+            Record(3, downloads: 10, likes: 20, comments: 20, updated: 300)
+        };
+
+        var result = GameBananaRecentSecondarySorter.FilterAndOrder(
+            records,
+            _ => true,
+            (GameBananaRecentSecondarySort)sortValue);
+
+        Assert.Equal(expectedFirstId, result[0].Id);
+    }
+
+    [Fact]
+    public void FilterAndOrder_AppliesContentFilterBeforeReturningOrder()
+    {
+        var result = GameBananaRecentSecondarySorter.FilterAndOrder(
+            [Record(1, downloads: 100), Record(2, downloads: 10)],
+            record => record.Id != 1,
+            GameBananaRecentSecondarySort.MostDownloaded);
+
+        Assert.Equal([2], result.Select(record => record.Id));
+    }
+
+    [Fact]
+    public void FilterAndOrder_UsesUpdatedDateThenIdForMetricTies()
+    {
+        var result = GameBananaRecentSecondarySorter.FilterAndOrder(
+            [
+                Record(1, downloads: 10, updated: 100),
+                Record(2, downloads: 10, updated: 200),
+                Record(3, downloads: 10, updated: 200)
+            ],
+            _ => true,
+            GameBananaRecentSecondarySort.MostDownloaded);
+
+        Assert.Equal([3, 2, 1], result.Select(record => record.Id));
+    }
+
+    [Theory]
     [InlineData((int)GameBananaRecentSecondarySort.MostDownloaded, 30, 20, 10)]
     [InlineData((int)GameBananaRecentSecondarySort.MostLiked, 3, 2, 1)]
     [InlineData((int)GameBananaRecentSecondarySort.MostCommented, 300, 200, 100)]

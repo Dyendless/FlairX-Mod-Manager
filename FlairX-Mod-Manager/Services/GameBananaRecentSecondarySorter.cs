@@ -176,6 +176,27 @@ internal static class GameBananaRecentSecondarySorter
         return new GameBananaRecentPoolResult(ordered, secondPage is null);
     }
 
+    internal static IReadOnlyList<GameBananaService.ModRecord> FilterAndOrder(
+        IEnumerable<GameBananaService.ModRecord> records,
+        Func<GameBananaService.ModRecord, bool> include,
+        GameBananaRecentSecondarySort sort)
+    {
+        var filtered = records.Where(include);
+        return sort switch
+        {
+            GameBananaRecentSecondarySort.MostLiked =>
+                Order(filtered, record => record.GetLikeCount()),
+            GameBananaRecentSecondarySort.MostDownloaded =>
+                Order(filtered, record => record.GetDownloadCount()),
+            GameBananaRecentSecondarySort.MostCommented =>
+                Order(filtered, record => record.GetPostCount()),
+            _ => filtered
+                .OrderByDescending(record => record.DateUpdated)
+                .ThenByDescending(record => record.Id)
+                .ToList()
+        };
+    }
+
     internal static bool CanLoadMore(GameBananaRecentSecondarySort sort, bool hasMorePages)
         => sort == GameBananaRecentSecondarySort.LatestUpdated && hasMorePages;
 
