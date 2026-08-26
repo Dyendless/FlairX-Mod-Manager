@@ -20,6 +20,15 @@ internal enum GameBananaRecentSecondarySort
     MostCommented
 }
 
+internal readonly record struct GameBananaRecentSelection(
+    GameBananaUpdatedTimeRange TimeRange,
+    GameBananaRecentSecondarySort Sort)
+{
+    internal static GameBananaRecentSelection Default => new(
+        GameBananaUpdatedTimeRange.Last90Days,
+        GameBananaRecentSecondarySort.LatestUpdated);
+}
+
 internal enum GameBananaRecentStopReason
 {
     None,
@@ -127,6 +136,23 @@ internal sealed record GameBananaRecentPoolResult(
 
 internal static class GameBananaRecentSecondarySorter
 {
+    internal static bool IsEligible(
+        bool isCharacterSkins,
+        GameBananaService.CategorySortOrder primarySort,
+        string? search) =>
+        isCharacterSkins &&
+        primarySort == GameBananaService.CategorySortOrder.LatestUpdated &&
+        string.IsNullOrWhiteSpace(search);
+
+    internal static GameBananaRecentSelection Normalize(
+        bool isCharacterSkins,
+        GameBananaService.CategorySortOrder primarySort,
+        string? search,
+        GameBananaRecentSelection requested) =>
+        IsEligible(isCharacterSkins, primarySort, search)
+            ? requested
+            : GameBananaRecentSelection.Default;
+
     internal static long? GetCutoffUnixSeconds(
         GameBananaUpdatedTimeRange range,
         DateTimeOffset nowUtc) => range switch
@@ -143,9 +169,7 @@ internal static class GameBananaRecentSecondarySorter
         string? search,
         GameBananaRecentSecondarySort requested)
     {
-        return isCharacterSkins &&
-               primarySort == GameBananaService.CategorySortOrder.LatestUpdated &&
-               string.IsNullOrWhiteSpace(search)
+        return IsEligible(isCharacterSkins, primarySort, search)
             ? requested
             : GameBananaRecentSecondarySort.LatestUpdated;
     }

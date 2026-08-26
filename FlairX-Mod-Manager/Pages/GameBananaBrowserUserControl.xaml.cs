@@ -34,9 +34,11 @@ namespace FlairX_Mod_Manager.Pages
         private int? _selectedCharacterCategoryId;
         private bool _isUpdatingCharacterSelection;
         private ComboBox CharacterFilterComboBox = null!;
+        private ComboBox TimeRangeComboBox = null!;
         private ComboBox SecondarySortComboBox = null!;
+        private GameBananaUpdatedTimeRange _currentTimeRange = GameBananaUpdatedTimeRange.Last90Days;
         private GameBananaRecentSecondarySort _currentSecondarySort = GameBananaRecentSecondarySort.LatestUpdated;
-        private bool _isUpdatingSecondarySort;
+        private bool _isUpdatingRecentWindowControls;
         private ObservableCollection<ModViewModel> _mods = new();
         private HashSet<int> _loadedModIds = new(); // Track loaded mod IDs to prevent duplicates
         private System.Collections.Generic.Dictionary<string, string> _lang = new();
@@ -270,7 +272,7 @@ namespace FlairX_Mod_Manager.Pages
         {
             InitializeComponent();
             CreateCharacterFilterComboBox();
-            CreateSecondarySortComboBox();
+            CreateRecentWindowComboBoxes();
             _gameTag = gameTag;
             _sourceModPath = sourceModPath;
             
@@ -330,12 +332,28 @@ namespace FlairX_Mod_Manager.Pages
             SortOrderComboBox.Items.Add(SharedUtilities.GetTranslation(_lang, "Sort_MostCommented") ?? "Most Commented");
             SortOrderComboBox.SelectedIndex = 0;
 
-            SecondarySortComboBox.Items.Add(GetTranslationOrDefault("SecondarySort_None", "No Secondary Sort"));
-            SecondarySortComboBox.Items.Add(GetTranslationOrDefault("SecondarySort_Downloads", "Most Downloaded"));
-            SecondarySortComboBox.Items.Add(GetTranslationOrDefault("SecondarySort_Likes", "Most Liked"));
-            SecondarySortComboBox.Items.Add(GetTranslationOrDefault("SecondarySort_Comments", "Most Commented"));
-            SecondarySortComboBox.SelectedIndex = 0;
-            UpdateSecondarySortAvailability();
+            _isUpdatingRecentWindowControls = true;
+            try
+            {
+                TimeRangeComboBox.Header = GetTranslationOrDefault("TimeRange_Header", "Time Range");
+                TimeRangeComboBox.Items.Add(GetTranslationOrDefault("TimeRange_Last30Days", "Last 30 Days"));
+                TimeRangeComboBox.Items.Add(GetTranslationOrDefault("TimeRange_Last90Days", "Last 90 Days"));
+                TimeRangeComboBox.Items.Add(GetTranslationOrDefault("TimeRange_Last180Days", "Last 180 Days"));
+                TimeRangeComboBox.Items.Add(GetTranslationOrDefault("TimeRange_Unlimited", "Unlimited (up to 500)"));
+                TimeRangeComboBox.SelectedIndex = 1;
+
+                SecondarySortComboBox.Header = GetTranslationOrDefault("WindowSort_Header", "Sort Within Range");
+                SecondarySortComboBox.Items.Add(GetTranslationOrDefault("WindowSort_LatestUpdated", "Latest Updated"));
+                SecondarySortComboBox.Items.Add(GetTranslationOrDefault("WindowSort_MostLiked", "Most Liked"));
+                SecondarySortComboBox.Items.Add(GetTranslationOrDefault("WindowSort_MostDownloaded", "Most Downloaded"));
+                SecondarySortComboBox.Items.Add(GetTranslationOrDefault("WindowSort_MostCommented", "Most Commented"));
+                SecondarySortComboBox.SelectedIndex = 0;
+            }
+            finally
+            {
+                _isUpdatingRecentWindowControls = false;
+            }
+            UpdateRecentWindowAvailability();
 
             // Set loading / empty state text
             LoadingText.Text = SharedUtilities.GetTranslation(_lang, "Loading") ?? "Loading...";
@@ -420,11 +438,23 @@ namespace FlairX_Mod_Manager.Pages
             FiltersToolbarGrid.Children.Add(CharacterFilterComboBox);
         }
 
-        private void CreateSecondarySortComboBox()
+        private void CreateRecentWindowComboBoxes()
         {
             FiltersToolbarGrid.ColumnDefinitions.Insert(3, new ColumnDefinition { Width = GridLength.Auto });
-            Grid.SetColumn(SearchBox, 4);
-            Grid.SetColumn(StarterPackButton, 5);
+            FiltersToolbarGrid.ColumnDefinitions.Insert(4, new ColumnDefinition { Width = GridLength.Auto });
+            Grid.SetColumn(SearchBox, 5);
+            Grid.SetColumn(StarterPackButton, 6);
+
+            TimeRangeComboBox = new ComboBox
+            {
+                MinWidth = 150,
+                Margin = new Thickness(0, 0, 12, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+                Visibility = Visibility.Collapsed
+            };
+            Grid.SetColumn(TimeRangeComboBox, 3);
+            TimeRangeComboBox.SelectionChanged += TimeRangeComboBox_SelectionChanged;
+            FiltersToolbarGrid.Children.Add(TimeRangeComboBox);
 
             SecondarySortComboBox = new ComboBox
             {
@@ -433,7 +463,7 @@ namespace FlairX_Mod_Manager.Pages
                 VerticalAlignment = VerticalAlignment.Center,
                 Visibility = Visibility.Collapsed
             };
-            Grid.SetColumn(SecondarySortComboBox, 3);
+            Grid.SetColumn(SecondarySortComboBox, 4);
             SecondarySortComboBox.SelectionChanged += SecondarySortComboBox_SelectionChanged;
             FiltersToolbarGrid.Children.Add(SecondarySortComboBox);
         }
@@ -721,7 +751,7 @@ namespace FlairX_Mod_Manager.Pages
             
             // Trigger search
             _currentSearch = searchQuery;
-            UpdateSecondarySortAvailability();
+            UpdateRecentWindowAvailability();
             _currentPage = 1;
             _ = LoadModsAsync();
         }
@@ -1542,7 +1572,7 @@ namespace FlairX_Mod_Manager.Pages
 
                 _currentSearch = null;
                 SearchBox.Text = "";
-                UpdateSecondarySortAvailability();
+                UpdateRecentWindowAvailability();
                 _currentPage = 1;
                 _ = LoadModsAsync();
             }
@@ -1577,61 +1607,91 @@ namespace FlairX_Mod_Manager.Pages
                     _ => GameBananaService.CategorySortOrder.LatestUpdated,
                 };
 
-                UpdateSecondarySortAvailability();
+                UpdateRecentWindowAvailability();
                 _currentPage = 1;
                 _ = LoadModsAsync();
             }
         }
 
+        private void TimeRangeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_isUpdatingRecentWindowControls || sender is not ComboBox comboBox)
+            {
+                return;
+            }
+
+            _currentTimeRange = comboBox.SelectedIndex switch
+            {
+                0 => GameBananaUpdatedTimeRange.Last30Days,
+                2 => GameBananaUpdatedTimeRange.Last180Days,
+                3 => GameBananaUpdatedTimeRange.Unlimited,
+                _ => GameBananaUpdatedTimeRange.Last90Days
+            };
+
+            var selection = GameBananaRecentSecondarySorter.Normalize(
+                _currentCategoryFilter == CategoryFilter.CharacterSkins,
+                _currentSortOrder,
+                _currentSearch,
+                new GameBananaRecentSelection(_currentTimeRange, _currentSecondarySort));
+            _currentTimeRange = selection.TimeRange;
+            _currentSecondarySort = selection.Sort;
+
+            _currentPage = 1;
+            _ = LoadModsAsync();
+        }
+
         private void SecondarySortComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (_isUpdatingSecondarySort || sender is not ComboBox comboBox)
+            if (_isUpdatingRecentWindowControls || sender is not ComboBox comboBox)
             {
                 return;
             }
 
             _currentSecondarySort = comboBox.SelectedIndex switch
             {
-                1 => GameBananaRecentSecondarySort.MostDownloaded,
-                2 => GameBananaRecentSecondarySort.MostLiked,
+                1 => GameBananaRecentSecondarySort.MostLiked,
+                2 => GameBananaRecentSecondarySort.MostDownloaded,
                 3 => GameBananaRecentSecondarySort.MostCommented,
                 _ => GameBananaRecentSecondarySort.LatestUpdated
             };
-            _currentSecondarySort = GameBananaRecentSecondarySorter.Normalize(
+
+            var selection = GameBananaRecentSecondarySorter.Normalize(
                 _currentCategoryFilter == CategoryFilter.CharacterSkins,
                 _currentSortOrder,
                 _currentSearch,
-                _currentSecondarySort);
+                new GameBananaRecentSelection(_currentTimeRange, _currentSecondarySort));
+            _currentTimeRange = selection.TimeRange;
+            _currentSecondarySort = selection.Sort;
 
             _currentPage = 1;
             _ = LoadModsAsync();
         }
 
-        private void UpdateSecondarySortAvailability(bool resetIfIneligible = true)
+        private void UpdateRecentWindowAvailability(bool resetIfIneligible = true)
         {
-            var normalized = GameBananaRecentSecondarySorter.Normalize(
+            var isEligible = GameBananaRecentSecondarySorter.IsEligible(
                 _currentCategoryFilter == CategoryFilter.CharacterSkins,
                 _currentSortOrder,
-                _currentSearch,
-                _currentSecondarySort);
-            var isEligible = _currentCategoryFilter == CategoryFilter.CharacterSkins &&
-                             _currentSortOrder == GameBananaService.CategorySortOrder.LatestUpdated &&
-                             string.IsNullOrWhiteSpace(_currentSearch);
+                _currentSearch);
 
-            if (resetIfIneligible && normalized != _currentSecondarySort)
+            if (resetIfIneligible && !isEligible)
             {
-                _currentSecondarySort = normalized;
-                _isUpdatingSecondarySort = true;
+                var selection = GameBananaRecentSelection.Default;
+                _currentTimeRange = selection.TimeRange;
+                _currentSecondarySort = selection.Sort;
+                _isUpdatingRecentWindowControls = true;
                 try
                 {
+                    TimeRangeComboBox.SelectedIndex = 1;
                     SecondarySortComboBox.SelectedIndex = 0;
                 }
                 finally
                 {
-                    _isUpdatingSecondarySort = false;
+                    _isUpdatingRecentWindowControls = false;
                 }
             }
 
+            TimeRangeComboBox.Visibility = isEligible ? Visibility.Visible : Visibility.Collapsed;
             SecondarySortComboBox.Visibility = isEligible ? Visibility.Visible : Visibility.Collapsed;
         }
 
@@ -1655,7 +1715,7 @@ namespace FlairX_Mod_Manager.Pages
                     UpdateBackButtonIcon();
                 }
                 _currentSearch = null;
-                UpdateSecondarySortAvailability();
+                UpdateRecentWindowAvailability();
                 _currentPage = 1;
                 _ = LoadModsAsync();
             }
@@ -1700,7 +1760,7 @@ namespace FlairX_Mod_Manager.Pages
                 UpdateBackButtonIcon();
             }
             _currentSearch = newSearch;
-            UpdateSecondarySortAvailability();
+            UpdateRecentWindowAvailability();
             _currentPage = 1;
             _ = LoadModsAsync();
         }
@@ -1723,7 +1783,7 @@ namespace FlairX_Mod_Manager.Pages
                 UpdateBackButtonIcon();
             }
             _currentSearch = newSearch;
-            UpdateSecondarySortAvailability();
+            UpdateRecentWindowAvailability();
             _currentPage = 1;
             await LoadModsAsync();
         }
@@ -2120,7 +2180,7 @@ namespace FlairX_Mod_Manager.Pages
                                 entry.SortOrder,
                                 entry.Search,
                                 entry.SecondarySort);
-                            _isUpdatingSecondarySort = true;
+                            _isUpdatingRecentWindowControls = true;
                             try
                             {
                                 SecondarySortComboBox.SelectedIndex = _currentSecondarySort switch
@@ -2133,9 +2193,9 @@ namespace FlairX_Mod_Manager.Pages
                             }
                             finally
                             {
-                                _isUpdatingSecondarySort = false;
+                                _isUpdatingRecentWindowControls = false;
                             }
-                            UpdateSecondarySortAvailability(resetIfIneligible: false);
+                            UpdateRecentWindowAvailability(resetIfIneligible: false);
 
                             if (entry.Filter == CategoryFilter.CharacterSkins)
                             {

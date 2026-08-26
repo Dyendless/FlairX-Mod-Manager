@@ -208,6 +208,44 @@ public class GameBananaRecentSecondarySorterTests
     }
 
     [Theory]
+    [InlineData(false, GameBananaService.CategorySortOrder.LatestUpdated, null)]
+    [InlineData(true, GameBananaService.CategorySortOrder.MostLiked, null)]
+    [InlineData(true, GameBananaService.CategorySortOrder.LatestUpdated, "ellen")]
+    public void Normalize_ResetsIncompatibleModeToDefault(
+        bool isCharacterSkins,
+        GameBananaService.CategorySortOrder primarySort,
+        string? search)
+    {
+        var selection = GameBananaRecentSecondarySorter.Normalize(
+            isCharacterSkins,
+            primarySort,
+            search,
+            new GameBananaRecentSelection(
+                GameBananaUpdatedTimeRange.Last180Days,
+                GameBananaRecentSecondarySort.MostLiked));
+
+        Assert.Equal(GameBananaRecentSelection.Default, selection);
+        Assert.False(GameBananaRecentSecondarySorter.IsEligible(
+            isCharacterSkins,
+            primarySort,
+            search));
+    }
+
+    [Fact]
+    public void Normalize_PreservesCompatibleRangeAndSort()
+    {
+        var requested = new GameBananaRecentSelection(
+            GameBananaUpdatedTimeRange.Last180Days,
+            GameBananaRecentSecondarySort.MostCommented);
+
+        Assert.Equal(requested, GameBananaRecentSecondarySorter.Normalize(
+            isCharacterSkins: true,
+            GameBananaService.CategorySortOrder.LatestUpdated,
+            search: null,
+            requested));
+    }
+
+    [Theory]
     [InlineData((int)GameBananaRecentSecondarySort.MostDownloaded, 30, 20, 10)]
     [InlineData((int)GameBananaRecentSecondarySort.MostLiked, 3, 2, 1)]
     [InlineData((int)GameBananaRecentSecondarySort.MostCommented, 300, 200, 100)]

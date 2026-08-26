@@ -1,18 +1,18 @@
 ## 1. Pure updated-window policy
 
-- [ ] 1.1 Add failing tests for 30/90/180-day cutoff calculation, inclusive boundary handling, and exclusive use of `DateUpdated`.
-- [ ] 1.2 Implement time-range, selection, stop-reason, and incremental collector types in `GameBananaRecentSecondarySorter.cs`.
-- [ ] 1.3 Add failing tests for cross-page deduplication, cutoff pagination, empty/complete pages, and continuation beyond 100 records.
-- [ ] 1.4 Implement collector continuation and stop decisions while retaining at most one record per mod ID.
-- [ ] 1.5 Add failing tests for 10-page and 500-raw-record caps, then implement both hard limits.
-- [ ] 1.6 Add failing tests for Latest Updated/Likes/Downloads/Comments ordering and content-filter-before-sort behavior, then implement deterministic ordering.
+- [x] 1.1 Add failing tests for 30/90/180-day cutoff calculation, inclusive boundary handling, and exclusive use of `DateUpdated`.
+- [x] 1.2 Implement time-range, selection, stop-reason, and incremental collector types in `GameBananaRecentSecondarySorter.cs`.
+- [x] 1.3 Add failing tests for cross-page deduplication, cutoff pagination, empty/complete pages, and continuation beyond 100 records.
+- [x] 1.4 Implement collector continuation and stop decisions while retaining at most one record per mod ID.
+- [x] 1.5 Add failing tests for 10-page and 500-raw-record caps, then implement both hard limits.
+- [x] 1.6 Add failing tests for Latest Updated/Likes/Downloads/Comments ordering and content-filter-before-sort behavior, then implement deterministic ordering.
 
 ## 2. Browser state and controls
 
-- [ ] 2.1 Add failing static UI and localization tests for distinct time-range/sort controls and English, Simplified Chinese, and Traditional Chinese keys.
-- [ ] 2.2 Create dynamic Time Range and Sort Within Range controls with a 90-day/latest-updated default.
-- [ ] 2.3 Replace old secondary-sort labels with the new localized range, sort, partial, and capped-result text.
-- [ ] 2.4 Add failing eligibility/mode-switch tests and implement state normalization for category, primary sort, and search transitions.
+- [x] 2.1 Add failing static UI and localization tests for distinct time-range/sort controls and English, Simplified Chinese, and Traditional Chinese keys.
+- [x] 2.2 Create dynamic Time Range and Sort Within Range controls with a 90-day/latest-updated default.
+- [x] 2.3 Replace old secondary-sort labels with the new localized range, sort, partial, and capped-result text.
+- [x] 2.4 Add failing eligibility/mode-switch tests and implement state normalization for category, primary sort, and search transitions.
 
 ## 3. Paginated collection and navigation
 

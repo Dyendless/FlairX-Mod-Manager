@@ -1,4 +1,5 @@
 using System.Xml.Linq;
+using System.Text.Json;
 using Xunit;
 
 namespace FlairX_Mod_Manager.Tests;
@@ -21,6 +22,9 @@ public class GameBananaBrowserXamlTests
         Assert.DoesNotContain(
             document.Descendants(),
             element => (string?)element.Attribute(xaml + "Name") == "SecondarySortComboBox");
+        Assert.DoesNotContain(
+            document.Descendants(),
+            element => (string?)element.Attribute(xaml + "Name") == "TimeRangeComboBox");
         Assert.Contains(
             document.Descendants(),
             element => (string?)element.Attribute(xaml + "Name") == "FiltersToolbarGrid");
@@ -33,9 +37,45 @@ public class GameBananaBrowserXamlTests
 
         Assert.Contains("CreateCharacterFilterComboBox();", codeBehind);
         Assert.Contains("private void CreateCharacterFilterComboBox()", codeBehind);
-        Assert.Contains("CreateSecondarySortComboBox();", codeBehind);
-        Assert.Contains("private void CreateSecondarySortComboBox()", codeBehind);
+        Assert.Contains("CreateRecentWindowComboBoxes();", codeBehind);
+        Assert.Contains("private void CreateRecentWindowComboBoxes()", codeBehind);
         Assert.DoesNotContain("CategoryFilterComboBox.Parent", codeBehind);
+    }
+
+    [Theory]
+    [InlineData("en")]
+    [InlineData("zh-CN")]
+    [InlineData("zh-TW")]
+    public void RecentWindowTranslations_AreComplete(string language)
+    {
+        var path = FindRepositoryFile(
+            "FlairX-Mod-Manager",
+            "Language",
+            "GameBananaBrowser",
+            $"{language}.json");
+        using var document = JsonDocument.Parse(File.ReadAllText(path));
+        var root = document.RootElement;
+        var keys = new[]
+        {
+            "TimeRange_Header",
+            "TimeRange_Last30Days",
+            "TimeRange_Last90Days",
+            "TimeRange_Last180Days",
+            "TimeRange_Unlimited",
+            "WindowSort_Header",
+            "WindowSort_LatestUpdated",
+            "WindowSort_MostLiked",
+            "WindowSort_MostDownloaded",
+            "WindowSort_MostCommented",
+            "RecentWindow_PartialWarning",
+            "RecentWindow_CappedWarning"
+        };
+
+        foreach (var key in keys)
+        {
+            Assert.True(root.TryGetProperty(key, out var value), $"Missing {key} in {language}.json");
+            Assert.False(string.IsNullOrWhiteSpace(value.GetString()));
+        }
     }
 
     [Fact]
