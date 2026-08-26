@@ -42,6 +42,46 @@ public class GameBananaBrowserXamlTests
         Assert.DoesNotContain("CategoryFilterComboBox.Parent", codeBehind);
     }
 
+    [Fact]
+    public void RecentWindowFilters_AlignAllComboBoxDropDownsAtBottom()
+    {
+        var xamlPath = FindRepositoryFile(
+            "FlairX-Mod-Manager",
+            "Pages",
+            "GameBananaBrowserUserControl.xaml");
+        var document = XDocument.Load(xamlPath);
+        XNamespace xaml = "http://schemas.microsoft.com/winfx/2006/xaml";
+
+        foreach (var name in new[] { "CategoryFilterComboBox", "SortOrderComboBox" })
+        {
+            var comboBox = Assert.Single(
+                document.Descendants(),
+                element => (string?)element.Attribute(xaml + "Name") == name);
+            Assert.Equal("Bottom", (string?)comboBox.Attribute("VerticalAlignment"));
+        }
+
+        var codeBehindPath = FindRepositoryFile(
+            "FlairX-Mod-Manager",
+            "Pages",
+            "GameBananaBrowserUserControl.xaml.cs");
+        var codeBehind = File.ReadAllText(codeBehindPath);
+        var characterMethod = SliceBetween(
+            codeBehind,
+            "private void CreateCharacterFilterComboBox()",
+            "private void CreateRecentWindowComboBoxes()");
+        var recentWindowMethod = SliceBetween(
+            codeBehind,
+            "private void CreateRecentWindowComboBoxes()",
+            "private void GameBananaBrowserUserControl_Loaded");
+
+        Assert.Contains("VerticalAlignment = VerticalAlignment.Bottom", characterMethod);
+        Assert.Equal(
+            2,
+            recentWindowMethod.Split(
+                "VerticalAlignment = VerticalAlignment.Bottom",
+                StringSplitOptions.None).Length - 1);
+    }
+
     [Theory]
     [InlineData("en")]
     [InlineData("zh-CN")]
@@ -67,7 +107,9 @@ public class GameBananaBrowserXamlTests
             "WindowSort_MostLiked",
             "WindowSort_MostDownloaded",
             "WindowSort_MostCommented",
+            "RecentWindow_PartialTitle",
             "RecentWindow_PartialWarning",
+            "RecentWindow_CappedTitle",
             "RecentWindow_CappedWarning"
         };
 
@@ -115,6 +157,25 @@ public class GameBananaBrowserXamlTests
             "Partial or capped window notices must be shown before an empty-result early return.");
     }
 
+    [Fact]
+    public void RecentWindowNotices_UseDedicatedLocalizedTitles()
+    {
+        var codeBehindPath = FindRepositoryFile(
+            "FlairX-Mod-Manager",
+            "Pages",
+            "GameBananaBrowserUserControl.xaml.cs");
+        var noticeHandling = SliceBetween(
+            File.ReadAllText(codeBehindPath),
+            "if (partialWindow)",
+            "if (records.Count == 0)");
+
+        Assert.Contains("\"RecentWindow_PartialTitle\"", noticeHandling);
+        Assert.Contains("\"Partial results\"", noticeHandling);
+        Assert.Contains("\"RecentWindow_CappedTitle\"", noticeHandling);
+        Assert.Contains("\"Results limited\"", noticeHandling);
+        Assert.DoesNotContain("GetTranslationOrDefault(\"Warning\"", noticeHandling);
+    }
+
     private static string FindRepositoryFile(params string[] segments)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
@@ -131,5 +192,15 @@ public class GameBananaBrowserXamlTests
         }
 
         throw new FileNotFoundException($"Could not locate {Path.Combine(segments)}.");
+    }
+
+    private static string SliceBetween(string text, string startMarker, string endMarker)
+    {
+        var start = text.IndexOf(startMarker, StringComparison.Ordinal);
+        var end = text.IndexOf(endMarker, start + startMarker.Length, StringComparison.Ordinal);
+
+        Assert.True(start >= 0, $"Missing marker: {startMarker}");
+        Assert.True(end > start, $"Missing marker after {startMarker}: {endMarker}");
+        return text[start..end];
     }
 }

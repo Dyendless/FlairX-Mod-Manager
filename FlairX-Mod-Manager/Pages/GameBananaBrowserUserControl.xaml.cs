@@ -431,7 +431,7 @@ namespace FlairX_Mod_Manager.Pages
                 MinWidth = 180,
                 MaxWidth = 260,
                 Margin = new Thickness(0, 0, 12, 0),
-                VerticalAlignment = VerticalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Bottom,
                 Visibility = Visibility.Collapsed
             };
             Grid.SetColumn(CharacterFilterComboBox, 1);
@@ -450,7 +450,7 @@ namespace FlairX_Mod_Manager.Pages
             {
                 MinWidth = 150,
                 Margin = new Thickness(0, 0, 12, 0),
-                VerticalAlignment = VerticalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Bottom,
                 Visibility = Visibility.Collapsed
             };
             Grid.SetColumn(TimeRangeComboBox, 3);
@@ -461,7 +461,7 @@ namespace FlairX_Mod_Manager.Pages
             {
                 MinWidth = 160,
                 Margin = new Thickness(0, 0, 12, 0),
-                VerticalAlignment = VerticalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Bottom,
                 Visibility = Visibility.Collapsed
             };
             Grid.SetColumn(SecondarySortComboBox, 4);
@@ -885,7 +885,9 @@ namespace FlairX_Mod_Manager.Pages
                 if (partialWindow)
                 {
                     ConnectionErrorBar.Severity = InfoBarSeverity.Warning;
-                    ConnectionErrorBar.Title = GetTranslationOrDefault("Warning", "Partial results");
+                    ConnectionErrorBar.Title = GetTranslationOrDefault(
+                        "RecentWindow_PartialTitle",
+                        "Partial results");
                     ConnectionErrorBar.Message = GetTranslationOrDefault(
                         "RecentWindow_PartialWarning",
                         "A later GameBanana page could not be loaded; the available results are shown.");
@@ -894,7 +896,9 @@ namespace FlairX_Mod_Manager.Pages
                 else if (cappedWindow)
                 {
                     ConnectionErrorBar.Severity = InfoBarSeverity.Warning;
-                    ConnectionErrorBar.Title = GetTranslationOrDefault("Warning", "Results limited");
+                    ConnectionErrorBar.Title = GetTranslationOrDefault(
+                        "RecentWindow_CappedTitle",
+                        "Results limited");
                     ConnectionErrorBar.Message = GetTranslationOrDefault(
                         "RecentWindow_CappedWarning",
                         "Results reached the safety limit of 10 pages or 500 records.");

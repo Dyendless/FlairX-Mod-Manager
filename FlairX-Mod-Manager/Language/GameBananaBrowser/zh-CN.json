@@ -105,7 +105,9 @@
     "WindowSort_MostLiked": "喜爱最多",
     "WindowSort_MostDownloaded": "下载最多",
     "WindowSort_MostCommented": "评论最多",
+    "RecentWindow_PartialTitle": "部分结果",
     "RecentWindow_PartialWarning": "GameBanana 后续页面加载失败，已显示当前可用结果。",
+    "RecentWindow_CappedTitle": "结果受限",
     "RecentWindow_CappedWarning": "结果已达到 10 页或 500 条的安全上限。",
     "GB_LoadImages": "加载图片",
     "GB_NoDescription": "暂无描述。"

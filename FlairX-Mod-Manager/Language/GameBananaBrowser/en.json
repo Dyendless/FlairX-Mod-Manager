@@ -105,7 +105,9 @@
     "WindowSort_MostLiked": "Most Liked",
     "WindowSort_MostDownloaded": "Most Downloaded",
     "WindowSort_MostCommented": "Most Commented",
+    "RecentWindow_PartialTitle": "Partial results",
     "RecentWindow_PartialWarning": "A later GameBanana page could not be loaded; the available results are shown.",
+    "RecentWindow_CappedTitle": "Results limited",
     "RecentWindow_CappedWarning": "Results reached the safety limit of 10 pages or 500 records.",
     "GB_LoadImages": "Load Images",
     "GB_NoDescription": "No description available."
