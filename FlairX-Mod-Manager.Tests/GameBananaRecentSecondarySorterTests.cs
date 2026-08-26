@@ -33,6 +33,132 @@ public class GameBananaRecentSecondarySorterTests
             Now));
     }
 
+    [Fact]
+    public void AddPage_KeepsCutoffBoundaryAndStopsAfterOlderRecord()
+    {
+        var cutoff = Now.AddDays(-90).ToUnixTimeSeconds();
+        var collector = new GameBananaRecentWindowCollector(
+            GameBananaUpdatedTimeRange.Last90Days,
+            Now);
+
+        var first = collector.AddPage(
+            [Record(1, updated: cutoff + 2), Record(2, updated: cutoff)],
+            sourceComplete: false);
+        var second = collector.AddPage(
+            [Record(3, updated: cutoff - 1)],
+            sourceComplete: false);
+
+        Assert.True(first.ShouldContinue);
+        Assert.False(second.ShouldContinue);
+        Assert.Equal(GameBananaRecentStopReason.CutoffReached, second.StopReason);
+        Assert.Equal([1, 2], collector.Records.Select(record => record.Id));
+    }
+
+    [Fact]
+    public void AddPage_DeduplicatesAcrossPagesAndContinuesPastOneHundred()
+    {
+        var collector = new GameBananaRecentWindowCollector(
+            GameBananaUpdatedTimeRange.Unlimited,
+            Now);
+
+        Assert.True(collector.AddPage(
+            Enumerable.Range(1, 100).Select(id => Record(id, updated: id)).ToArray(),
+            sourceComplete: false).ShouldContinue);
+        Assert.True(collector.AddPage(
+            Enumerable.Range(100, 51).Select(id => Record(id, updated: id)).ToArray(),
+            sourceComplete: false).ShouldContinue);
+
+        Assert.Equal(150, collector.Records.Count);
+        Assert.Equal(150, collector.Records.Select(record => record.Id).Distinct().Count());
+    }
+
+    [Fact]
+    public void AddPage_StopsOnEmptyPage()
+    {
+        var collector = new GameBananaRecentWindowCollector(
+            GameBananaUpdatedTimeRange.Unlimited,
+            Now);
+
+        var result = collector.AddPage([], sourceComplete: false);
+
+        Assert.False(result.ShouldContinue);
+        Assert.Equal(GameBananaRecentStopReason.EmptyPage, result.StopReason);
+    }
+
+    [Fact]
+    public void AddPage_StopsWhenSourceIsComplete()
+    {
+        var collector = new GameBananaRecentWindowCollector(
+            GameBananaUpdatedTimeRange.Unlimited,
+            Now);
+
+        var result = collector.AddPage([Record(1)], sourceComplete: true);
+
+        Assert.False(result.ShouldContinue);
+        Assert.Equal(GameBananaRecentStopReason.SourceComplete, result.StopReason);
+    }
+
+    [Fact]
+    public void AddPage_StopsAfterTenPages()
+    {
+        var collector = new GameBananaRecentWindowCollector(
+            GameBananaUpdatedTimeRange.Unlimited,
+            Now);
+
+        GameBananaRecentPageDecision result = default;
+        for (var page = 1; page <= GameBananaRecentWindowCollector.MaxPages; page++)
+        {
+            result = collector.AddPage([Record(page)], sourceComplete: false);
+        }
+
+        Assert.False(result.ShouldContinue);
+        Assert.Equal(GameBananaRecentStopReason.PageLimit, result.StopReason);
+        Assert.Equal(10, collector.PagesProcessed);
+    }
+
+    [Fact]
+    public void AddPage_ProcessesAtMostFiveHundredRawRecords()
+    {
+        var collector = new GameBananaRecentWindowCollector(
+            GameBananaUpdatedTimeRange.Unlimited,
+            Now);
+
+        var result = collector.AddPage(
+            Enumerable.Range(1, 600).Select(id => Record(id)).ToArray(),
+            sourceComplete: false);
+
+        Assert.False(result.ShouldContinue);
+        Assert.Equal(GameBananaRecentStopReason.RecordLimit, result.StopReason);
+        Assert.Equal(500, collector.RawRecordsProcessed);
+        Assert.Equal(500, collector.Records.Count);
+    }
+
+    [Fact]
+    public void AddPage_DoesNotUsePublishedTimestampWhenUpdatedTimestampIsMissing()
+    {
+        var collector = new GameBananaRecentWindowCollector(
+            GameBananaUpdatedTimeRange.Last90Days,
+            Now);
+        var record = Record(1, updated: 0);
+        record.DateAdded = Now.ToUnixTimeSeconds();
+
+        var result = collector.AddPage([record], sourceComplete: false);
+
+        Assert.False(result.ShouldContinue);
+        Assert.Equal(GameBananaRecentStopReason.CutoffReached, result.StopReason);
+        Assert.Empty(collector.Records);
+    }
+
+    [Fact]
+    public void ModRecord_MapsGameBananaUpdatedTimestampSeparatelyFromPublishedTimestamp()
+    {
+        var record = JsonSerializer.Deserialize<GameBananaService.ModRecord>(
+            """{"_idRow":7,"_tsDateAdded":111,"_tsDateUpdated":222}""")!;
+
+        Assert.Equal(111, record.DateAdded);
+        Assert.Equal(222, record.DateUpdated);
+    }
+
     [Theory]
     [InlineData((int)GameBananaRecentSecondarySort.MostDownloaded, 30, 20, 10)]
     [InlineData((int)GameBananaRecentSecondarySort.MostLiked, 3, 2, 1)]
