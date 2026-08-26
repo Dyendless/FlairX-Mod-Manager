@@ -90,6 +90,10 @@ public class GameBananaBrowserXamlTests
         Assert.Contains("GameBananaRecentSecondarySort SecondarySort", codeBehind);
         Assert.Contains("SecondarySort: _currentSecondarySort", codeBehind);
         Assert.Contains("entry.SecondarySort", codeBehind);
+        Assert.Contains("GameBananaUpdatedTimeRange TimeRange", codeBehind);
+        Assert.Contains("TimeRange: _currentTimeRange", codeBehind);
+        Assert.Contains("entry.TimeRange", codeBehind);
+        Assert.Contains("while (decision.ShouldContinue)", codeBehind);
     }
 
     private static string FindRepositoryFile(params string[] segments)

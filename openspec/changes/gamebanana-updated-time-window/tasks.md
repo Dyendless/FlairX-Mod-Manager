@@ -16,11 +16,11 @@
 
 ## 3. Paginated collection and navigation
 
-- [ ] 3.1 Replace the fixed page-1/page-2 path with page-by-page `_tsDateUpdated,DESC` collection and request-generation checks after every await.
-- [ ] 3.2 Apply deduplication/window membership first, existing NSFW/blacklist filtering second, and local ordering third; suppress Load More for active window pools.
-- [ ] 3.3 Preserve first-page connection errors, accumulated results on later-page failure, and localized partial/capped notices.
-- [ ] 3.4 Add Time Range to every mod-list navigation capture and restore compatible range/sort controls without duplicate loads.
-- [ ] 3.5 Run all targeted GameBanana tests and fix regressions without weakening assertions.
+- [x] 3.1 Replace the fixed page-1/page-2 path with page-by-page `_tsDateUpdated,DESC` collection and request-generation checks after every await.
+- [x] 3.2 Apply deduplication/window membership first, existing NSFW/blacklist filtering second, and local ordering third; suppress Load More for active window pools.
+- [x] 3.3 Preserve first-page connection errors, accumulated results on later-page failure, and localized partial/capped notices.
+- [x] 3.4 Add Time Range to every mod-list navigation capture and restore compatible range/sort controls without duplicate loads.
+- [x] 3.5 Run all targeted GameBanana tests and fix regressions without weakening assertions.
 
 ## 4. Verification, deployment, and completion
 

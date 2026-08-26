@@ -15,8 +15,8 @@ internal enum GameBananaUpdatedTimeRange
 internal enum GameBananaRecentSecondarySort
 {
     LatestUpdated,
-    MostDownloaded,
     MostLiked,
+    MostDownloaded,
     MostCommented
 }
 
@@ -130,10 +130,6 @@ internal sealed class GameBananaRecentWindowCollector
     }
 }
 
-internal sealed record GameBananaRecentPoolResult(
-    IReadOnlyList<GameBananaService.ModRecord> Records,
-    bool IsPartial);
-
 internal static class GameBananaRecentSecondarySorter
 {
     internal static bool IsEligible(
@@ -163,43 +159,6 @@ internal static class GameBananaRecentSecondarySorter
         _ => null
     };
 
-    internal static GameBananaRecentSecondarySort Normalize(
-        bool isCharacterSkins,
-        GameBananaService.CategorySortOrder primarySort,
-        string? search,
-        GameBananaRecentSecondarySort requested)
-    {
-        return IsEligible(isCharacterSkins, primarySort, search)
-            ? requested
-            : GameBananaRecentSecondarySort.LatestUpdated;
-    }
-
-    internal static GameBananaRecentPoolResult? Build(
-        IReadOnlyList<GameBananaService.ModRecord>? firstPage,
-        IReadOnlyList<GameBananaService.ModRecord>? secondPage,
-        GameBananaRecentSecondarySort sort)
-    {
-        if (firstPage is null)
-        {
-            return null;
-        }
-
-        var candidates = firstPage
-            .Concat(secondPage ?? [])
-            .DistinctBy(record => record.Id)
-            .Take(100);
-
-        var ordered = sort switch
-        {
-            GameBananaRecentSecondarySort.MostDownloaded => Order(candidates, record => record.GetDownloadCount()),
-            GameBananaRecentSecondarySort.MostLiked => Order(candidates, record => record.GetLikeCount()),
-            GameBananaRecentSecondarySort.MostCommented => Order(candidates, record => record.GetPostCount()),
-            _ => candidates.ToList()
-        };
-
-        return new GameBananaRecentPoolResult(ordered, secondPage is null);
-    }
-
     internal static IReadOnlyList<GameBananaService.ModRecord> FilterAndOrder(
         IEnumerable<GameBananaService.ModRecord> records,
         Func<GameBananaService.ModRecord, bool> include,
@@ -220,9 +179,6 @@ internal static class GameBananaRecentSecondarySorter
                 .ToList()
         };
     }
-
-    internal static bool CanLoadMore(GameBananaRecentSecondarySort sort, bool hasMorePages)
-        => sort == GameBananaRecentSecondarySort.LatestUpdated && hasMorePages;
 
     private static IReadOnlyList<GameBananaService.ModRecord> Order(
         IEnumerable<GameBananaService.ModRecord> records,

@@ -495,7 +495,7 @@ namespace FlairX_Mod_Manager.Services
             MostCommented,   // _nPostCount,DESC
         }
 
-        private static string GetSortParam(CategorySortOrder sort) => sort switch
+        internal static string GetSortParam(CategorySortOrder sort) => sort switch
         {
             CategorySortOrder.Newest         => "_tsDateAdded,DESC",
             CategorySortOrder.Oldest         => "_tsDateAdded,ASC",

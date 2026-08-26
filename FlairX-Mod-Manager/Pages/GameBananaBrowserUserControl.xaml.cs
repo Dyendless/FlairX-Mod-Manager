@@ -152,6 +152,7 @@ namespace FlairX_Mod_Manager.Pages
             CategoryFilter Filter = CategoryFilter.AllMods,
             GameBananaService.CategorySortOrder SortOrder = GameBananaService.CategorySortOrder.LatestUpdated,
             int? CharacterCategoryId = null,
+            GameBananaUpdatedTimeRange TimeRange = GameBananaUpdatedTimeRange.Last90Days,
             GameBananaRecentSecondarySort SecondarySort = GameBananaRecentSecondarySort.LatestUpdated
         );
 
@@ -772,6 +773,12 @@ namespace FlairX_Mod_Manager.Pages
                 _gameTag, page, _currentSearch, null, null, null, null, null, null);
         }
 
+        private bool IsRecentWindowEligible() =>
+            GameBananaRecentSecondarySorter.IsEligible(
+                _currentCategoryFilter == CategoryFilter.CharacterSkins,
+                _currentSortOrder,
+                _currentSearch);
+
         private async Task LoadModsAsync()
         {
             var loadGeneration = Interlocked.Increment(ref _loadGeneration);
@@ -787,13 +794,13 @@ namespace FlairX_Mod_Manager.Pages
                 _mods.Clear();
                 _loadedModIds.Clear();
 
-                var secondarySort = GameBananaRecentSecondarySorter.Normalize(
+                var windowEligible = IsRecentWindowEligible();
+                var selection = GameBananaRecentSecondarySorter.Normalize(
                     _currentCategoryFilter == CategoryFilter.CharacterSkins,
                     _currentSortOrder,
                     _currentSearch,
-                    _currentSecondarySort);
-                var secondarySortActive = secondarySort != GameBananaRecentSecondarySort.LatestUpdated;
-                var firstPage = secondarySortActive ? 1 : _currentPage;
+                    new GameBananaRecentSelection(_currentTimeRange, _currentSecondarySort));
+                var firstPage = windowEligible ? 1 : _currentPage;
                 var response = await FetchModsPageAsync(firstPage);
                 if (loadGeneration != _loadGeneration) return;
 
@@ -823,19 +830,48 @@ namespace FlairX_Mod_Manager.Pages
 
                 var firstPageRecords = response.Records ?? [];
                 IReadOnlyList<GameBananaService.ModRecord> records;
-                var partialSecondaryPool = false;
+                var partialWindow = false;
+                var cappedWindow = false;
 
-                if (secondarySortActive)
+                if (windowEligible)
                 {
-                    var secondResponse = await FetchModsPageAsync(2);
-                    if (loadGeneration != _loadGeneration) return;
+                    var collector = new GameBananaRecentWindowCollector(
+                        selection.TimeRange,
+                        DateTimeOffset.UtcNow);
+                    var sourceComplete = response.Metadata?.IsComplete ?? firstPageRecords.Count < 50;
+                    var decision = collector.AddPage(firstPageRecords, sourceComplete);
 
-                    var pool = GameBananaRecentSecondarySorter.Build(
-                        firstPageRecords,
-                        secondResponse?.Records,
-                        secondarySort)!;
-                    records = pool.Records;
-                    partialSecondaryPool = pool.IsPartial;
+                    while (decision.ShouldContinue)
+                    {
+                        var nextPage = collector.PagesProcessed + 1;
+                        var nextResponse = await FetchModsPageAsync(nextPage);
+                        if (loadGeneration != _loadGeneration) return;
+
+                        if (nextResponse is null)
+                        {
+                            partialWindow = true;
+                            Logger.LogWarning(
+                                $"GameBanana recent window page {nextPage} failed after " +
+                                $"{collector.PagesProcessed} successful page(s).");
+                            break;
+                        }
+
+                        var nextRecords = nextResponse.Records ?? [];
+                        sourceComplete = nextResponse.Metadata?.IsComplete ?? nextRecords.Count < 50;
+                        decision = collector.AddPage(nextRecords, sourceComplete);
+                    }
+
+                    records = GameBananaRecentSecondarySorter.FilterAndOrder(
+                        collector.Records,
+                        ShouldIncludeMod,
+                        selection.Sort);
+                    cappedWindow = collector.StopReason is
+                        GameBananaRecentStopReason.PageLimit or
+                        GameBananaRecentStopReason.RecordLimit;
+                    Logger.LogInfo(
+                        $"GameBanana recent window stopped with {collector.StopReason}: " +
+                        $"pages={collector.PagesProcessed}, raw={collector.RawRecordsProcessed}, " +
+                        $"uniqueInRange={collector.Records.Count}, displayed={records.Count}.");
                     _hasMorePages = false;
                 }
                 else
@@ -860,7 +896,8 @@ namespace FlairX_Mod_Manager.Pages
                 var installedText = SharedUtilities.GetTranslation(_lang, "Installed");
                 foreach (var record in records)
                 {
-                    if (_loadedModIds.Contains(record.Id) || !ShouldIncludeMod(record))
+                    if (_loadedModIds.Contains(record.Id) ||
+                        (!windowEligible && !ShouldIncludeMod(record)))
                     {
                         continue;
                     }
@@ -873,7 +910,7 @@ namespace FlairX_Mod_Manager.Pages
                     _loadedModIds.Add(record.Id);
                 }
 
-                if (!secondarySortActive && _mods.Count < 20 && _hasMorePages)
+                if (!windowEligible && _mods.Count < 20 && _hasMorePages)
                 {
                     Logger.LogInfo($"Only {_mods.Count} mods loaded after NSFW filtering, auto-loading more pages...");
                     await AutoLoadMorePagesAsync(loadGeneration);
@@ -893,20 +930,27 @@ namespace FlairX_Mod_Manager.Pages
                 _ = LoadImagesAsync();
                 LoadingPanel.Visibility = Visibility.Collapsed;
                 ModsGridView.Visibility = Visibility.Visible;
-                LoadMoreMainModsButton.Visibility = GameBananaRecentSecondarySorter.CanLoadMore(
-                    secondarySort,
-                    _hasMorePages)
+                LoadMoreMainModsButton.Visibility = !windowEligible && _hasMorePages
                     ? Visibility.Visible
                     : Visibility.Collapsed;
                 LoadMoreAuthorModsButton.Visibility = Visibility.Collapsed;
 
-                if (partialSecondaryPool)
+                if (partialWindow)
                 {
                     ConnectionErrorBar.Severity = InfoBarSeverity.Warning;
                     ConnectionErrorBar.Title = GetTranslationOrDefault("Warning", "Partial results");
                     ConnectionErrorBar.Message = GetTranslationOrDefault(
-                        "SecondarySort_PartialWarning",
-                        "Only the first 50 recent mods could be loaded; the available results were sorted.");
+                        "RecentWindow_PartialWarning",
+                        "A later GameBanana page could not be loaded; the available results are shown.");
+                    ConnectionErrorBar.IsOpen = true;
+                }
+                else if (cappedWindow)
+                {
+                    ConnectionErrorBar.Severity = InfoBarSeverity.Warning;
+                    ConnectionErrorBar.Title = GetTranslationOrDefault("Warning", "Results limited");
+                    ConnectionErrorBar.Message = GetTranslationOrDefault(
+                        "RecentWindow_CappedWarning",
+                        "Results reached the safety limit of 10 pages or 500 records.");
                     ConnectionErrorBar.IsOpen = true;
                 }
             }
@@ -1227,7 +1271,8 @@ namespace FlairX_Mod_Manager.Pages
         {
             if ((expectedLoadGeneration.HasValue && expectedLoadGeneration.Value != _loadGeneration) ||
                 _isLoadingMore ||
-                !GameBananaRecentSecondarySorter.CanLoadMore(_currentSecondarySort, _hasMorePages))
+                IsRecentWindowEligible() ||
+                !_hasMorePages)
             {
                 return;
             }
@@ -1295,9 +1340,7 @@ namespace FlairX_Mod_Manager.Pages
                 _ = LoadImagesAsync();
                 
                 // Update Load More button visibility
-                LoadMoreMainModsButton.Visibility = GameBananaRecentSecondarySorter.CanLoadMore(
-                    _currentSecondarySort,
-                    _hasMorePages)
+                LoadMoreMainModsButton.Visibility = !IsRecentWindowEligible() && _hasMorePages
                     ? Visibility.Visible
                     : Visibility.Collapsed;
                 LoadMoreAuthorModsButton.Visibility = Visibility.Collapsed;
@@ -1326,7 +1369,8 @@ namespace FlairX_Mod_Manager.Pages
         {
             // If ScrollViewer doesn't have enough content to scroll, load more
             if (_modsScrollViewer != null &&
-                GameBananaRecentSecondarySorter.CanLoadMore(_currentSecondarySort, _hasMorePages) &&
+                !IsRecentWindowEligible() &&
+                _hasMorePages &&
                 !_isLoadingMore)
             {
                 var scrollableHeight = _modsScrollViewer.ScrollableHeight;
@@ -1711,6 +1755,7 @@ namespace FlairX_Mod_Manager.Pages
                         Filter: _currentCategoryFilter,
                         SortOrder: _currentSortOrder,
                         CharacterCategoryId: _selectedCharacterCategoryId,
+                        TimeRange: _currentTimeRange,
                         SecondarySort: _currentSecondarySort));
                     UpdateBackButtonIcon();
                 }
@@ -1756,6 +1801,7 @@ namespace FlairX_Mod_Manager.Pages
                     Filter: _currentCategoryFilter,
                     SortOrder: _currentSortOrder,
                     CharacterCategoryId: _selectedCharacterCategoryId,
+                    TimeRange: _currentTimeRange,
                     SecondarySort: _currentSecondarySort));
                 UpdateBackButtonIcon();
             }
@@ -1779,6 +1825,7 @@ namespace FlairX_Mod_Manager.Pages
                     Filter: _currentCategoryFilter,
                     SortOrder: _currentSortOrder,
                     CharacterCategoryId: _selectedCharacterCategoryId,
+                    TimeRange: _currentTimeRange,
                     SecondarySort: _currentSecondarySort));
                 UpdateBackButtonIcon();
             }
@@ -2143,6 +2190,7 @@ namespace FlairX_Mod_Manager.Pages
                         if (entry.Search != _currentSearch || entry.Page != _currentPage || 
                             entry.Filter != _currentCategoryFilter || entry.SortOrder != _currentSortOrder ||
                             entry.CharacterCategoryId != _selectedCharacterCategoryId ||
+                            entry.TimeRange != _currentTimeRange ||
                             entry.SecondarySort != _currentSecondarySort ||
                             _mods.Count == 0)
                         {
@@ -2175,18 +2223,27 @@ namespace FlairX_Mod_Manager.Pages
                             };
                             SortOrderComboBox.SelectionChanged += SortOrderComboBox_SelectionChanged;
 
-                            _currentSecondarySort = GameBananaRecentSecondarySorter.Normalize(
+                            var recentSelection = GameBananaRecentSecondarySorter.Normalize(
                                 entry.Filter == CategoryFilter.CharacterSkins,
                                 entry.SortOrder,
                                 entry.Search,
-                                entry.SecondarySort);
+                                new GameBananaRecentSelection(entry.TimeRange, entry.SecondarySort));
+                            _currentTimeRange = recentSelection.TimeRange;
+                            _currentSecondarySort = recentSelection.Sort;
                             _isUpdatingRecentWindowControls = true;
                             try
                             {
+                                TimeRangeComboBox.SelectedIndex = _currentTimeRange switch
+                                {
+                                    GameBananaUpdatedTimeRange.Last30Days => 0,
+                                    GameBananaUpdatedTimeRange.Last180Days => 2,
+                                    GameBananaUpdatedTimeRange.Unlimited => 3,
+                                    _ => 1
+                                };
                                 SecondarySortComboBox.SelectedIndex = _currentSecondarySort switch
                                 {
-                                    GameBananaRecentSecondarySort.MostDownloaded => 1,
-                                    GameBananaRecentSecondarySort.MostLiked => 2,
+                                    GameBananaRecentSecondarySort.MostLiked => 1,
+                                    GameBananaRecentSecondarySort.MostDownloaded => 2,
                                     GameBananaRecentSecondarySort.MostCommented => 3,
                                     _ => 0
                                 };
@@ -2435,6 +2492,7 @@ namespace FlairX_Mod_Manager.Pages
                             Filter: _currentCategoryFilter,
                             SortOrder: _currentSortOrder,
                             CharacterCategoryId: _selectedCharacterCategoryId,
+                            TimeRange: _currentTimeRange,
                             SecondarySort: _currentSecondarySort));
                     }
                     else if (_currentState == NavigationState.ModDetails && _currentModDetails != null)
@@ -2741,6 +2799,7 @@ namespace FlairX_Mod_Manager.Pages
                             Filter: _currentCategoryFilter,
                             SortOrder: _currentSortOrder,
                             CharacterCategoryId: _selectedCharacterCategoryId,
+                            TimeRange: _currentTimeRange,
                             SecondarySort: _currentSecondarySort));
                     }
                     else if (_currentState == NavigationState.AuthorMods && _currentAuthorId.HasValue)
@@ -3891,6 +3950,7 @@ namespace FlairX_Mod_Manager.Pages
                                 Filter: _currentCategoryFilter,
                                 SortOrder: _currentSortOrder,
                                 CharacterCategoryId: _selectedCharacterCategoryId,
+                                TimeRange: _currentTimeRange,
                                 SecondarySort: _currentSecondarySort));
                         }
                         else if (_currentState == NavigationState.ModDetails && _currentModDetails != null)
