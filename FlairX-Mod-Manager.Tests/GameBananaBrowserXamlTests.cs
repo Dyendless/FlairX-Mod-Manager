@@ -176,6 +176,29 @@ public class GameBananaBrowserXamlTests
         Assert.DoesNotContain("GetTranslationOrDefault(\"Warning\"", noticeHandling);
     }
 
+    [Fact]
+    public void SuccessfulInstall_ReturnsThroughTheSameNavigationHistoryAsBackButton()
+    {
+        var codeBehindPath = FindRepositoryFile(
+            "FlairX-Mod-Manager",
+            "Pages",
+            "GameBananaBrowserUserControl.xaml.cs");
+        var codeBehind = File.ReadAllText(codeBehindPath);
+        var backButtonHandler = SliceBetween(
+            codeBehind,
+            "private void BackButton_Click",
+            "private async Task NavigateBackAsync");
+        var downloadHandler = SliceBetween(
+            codeBehind,
+            "private async void DetailDownloadButton_Click",
+            "private void OnModInstalled");
+
+        Assert.Contains("_ = NavigateBackAsync();", backButtonHandler);
+        Assert.Contains("installationCompleted = true", downloadHandler);
+        Assert.Contains("await NavigateBackAsync();", downloadHandler);
+        Assert.DoesNotContain("CloseDetailsPanel();", downloadHandler);
+    }
+
     private static string FindRepositoryFile(params string[] segments)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

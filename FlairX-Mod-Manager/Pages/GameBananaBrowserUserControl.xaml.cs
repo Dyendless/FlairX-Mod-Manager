@@ -2146,13 +2146,18 @@ namespace FlairX_Mod_Manager.Pages
 
         private void BackButton_Click(object sender, RoutedEventArgs e)
         {
+            _ = NavigateBackAsync();
+        }
+
+        private async Task NavigateBackAsync()
+        {
             if (_isNavigating) return;
 
             if (_navigationStack.Count > 0)
             {
                 var previous = _navigationStack.Pop();
                 _isNavigating = true; // Set synchronously before async call to prevent race condition
-                _ = RestoreNavigationEntryAsync(previous);
+                await RestoreNavigationEntryAsync(previous);
             }
             else
             {
@@ -2988,15 +2993,27 @@ namespace FlairX_Mod_Manager.Pages
                 existingModPath); // Pass existing mod path if installed
             extractDialog.XamlRoot = XamlRoot;
             
-            // Subscribe to ModInstalled event to update tile status
-            extractDialog.ModInstalled += OnModInstalled;
-            
-            var result = await extractDialog.ShowAsync();
+            var installationCompleted = false;
+            EventHandler<Dialogs.GameBananaFileExtractionDialog.ModInstalledEventArgs> installedHandler =
+                (dialogSender, eventArgs) =>
+                {
+                    installationCompleted = true;
+                    OnModInstalled(dialogSender, eventArgs);
+                };
 
-            if (result == ContentDialogResult.Primary)
+            extractDialog.ModInstalled += installedHandler;
+            try
             {
-                CloseDetailsPanel();
-                // Reload will happen when browser is closed (if mod was installed)
+                await extractDialog.ShowAsync();
+            }
+            finally
+            {
+                extractDialog.ModInstalled -= installedHandler;
+            }
+
+            if (installationCompleted)
+            {
+                await NavigateBackAsync();
             }
         }
         
