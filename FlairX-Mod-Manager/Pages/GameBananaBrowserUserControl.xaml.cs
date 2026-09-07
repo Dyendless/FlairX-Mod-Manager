@@ -3734,24 +3734,28 @@ namespace FlairX_Mod_Manager.Pages
                 // Convert HTML to Markdown with custom config
                 var config = new ReverseMarkdown.Config
                 {
-                    UnknownTags = ReverseMarkdown.Config.UnknownTagsOption.PassThrough,
+                    Tags = { Unknown = ReverseMarkdown.Config.UnknownTagsOption.PassThrough },
                     GithubFlavored = true,
-                    RemoveComments = true,
-                    SmartHrefHandling = true
+                    Formatting = { RemoveComments = true },
+                    Links = { SmartHref = true }
                 };
+                
+                // 🆕 Preprocessing pipeline - clean HTML before conversion
+                config.Preprocess
+                    .RemoveScripts()              // Remove <script> tags and event handlers
+                    .RemoveStyles()               // Remove style attributes and <style> tags
+                    .RemoveHidden()               // Remove hidden elements (display:none, visibility:hidden)
+                    .Unwrap("span, font")         // Keep text, remove wrapper elements
+                    .RemoveEmptyElements();       // Clean up leftover empty tags
+                
                 var converter = new ReverseMarkdown.Converter(config);
                 var markdown = converter.Convert(htmlContent);
                 
-                // Clean up excessive whitespace
-                // Remove more than 2 consecutive newlines
+                // Clean up excessive whitespace (still needed for final polish)
                 markdown = System.Text.RegularExpressions.Regex.Replace(markdown, @"\n{3,}", "\n\n");
-                // Remove whitespace before/after images
                 markdown = System.Text.RegularExpressions.Regex.Replace(markdown, @"\n+!\[", "\n\n![");
                 markdown = System.Text.RegularExpressions.Regex.Replace(markdown, @"\)\n+", ")\n\n");
-                
-                // Trim each line
-                var lines = markdown.Split('\n');
-                markdown = string.Join('\n', lines.Select(l => l.Trim()));
+                markdown = markdown.Trim();
                 
                 Logger.LogInfo($"Description converted to Markdown ({markdown.Length} chars)");
 
