@@ -93,7 +93,8 @@ namespace FlairX_Mod_Manager.Dialogs
             GameBananaService.PreviewMedia? previewMedia = null,
             bool isNSFW = false,
             string? version = null,
-            string? existingModPath = null)
+            string? existingModPath = null,
+            bool showFileSelection = false)
         {
             _selectedFiles = selectedFiles;
             _modName = modName;
@@ -165,6 +166,144 @@ namespace FlairX_Mod_Manager.Dialogs
                 _modNameTextBox.BeforeTextChanging += ModNameTextBox_BeforeTextChanging;
                 _modNameTextBox.TextChanged += (s, e) => ValidateInputs();
                 stackPanel.Children.Add(_modNameTextBox);
+
+                // File Selection (show only if showFileSelection is true and multiple files available)
+                if (showFileSelection && selectedFiles != null && selectedFiles.Count > 0)
+                {
+                    var filesLabel = new TextBlock
+                    {
+                        Text = SharedUtilities.GetTranslation(_lang, "SelectFilesToDownload") ?? "Select Files to Download",
+                        FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                        Margin = new Thickness(0, 0, 0, 4)
+                    };
+                    stackPanel.Children.Add(filesLabel);
+
+                    // Border wrapping file list (same as GameBanana browser)
+                    var fileBorder = new Border
+                    {
+                        Background = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["CardBackgroundFillColorDefaultBrush"],
+                        BorderBrush = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["CardStrokeColorDefaultBrush"],
+                        BorderThickness = new Thickness(1),
+                        CornerRadius = new CornerRadius(8),
+                        Padding = new Thickness(8),
+                        Margin = new Thickness(0, 0, 0, 8)
+                    };
+
+                    // Create ScrollViewer with StackPanel for file checkboxes
+                    var fileScrollViewer = new ScrollViewer
+                    {
+                        MaxHeight = 300,
+                        VerticalScrollBarVisibility = ScrollBarVisibility.Auto
+                    };
+
+                    var fileStack = new StackPanel { Spacing = 0 };
+
+                    foreach (var file in selectedFiles)
+                    {
+                        var fileCheckBox = new CheckBox
+                        {
+                            IsChecked = file.IsSelected,
+                            Padding = new Thickness(12, 8, 12, 8),
+                            HorizontalAlignment = HorizontalAlignment.Stretch,
+                            HorizontalContentAlignment = HorizontalAlignment.Stretch
+                        };
+
+                        // Create content grid with 3 rows (like GameBanana browser)
+                        var fileGrid = new Grid();
+                        fileGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Auto) });
+                        fileGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Auto) });
+                        fileGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Auto) });
+
+                        // Row 0: File name
+                        var fileNameText = new TextBlock
+                        {
+                            Text = file.FileName,
+                            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
+                        };
+                        Grid.SetRow(fileNameText, 0);
+                        fileGrid.Children.Add(fileNameText);
+
+                        // Row 1: Description (if exists)
+                        if (!string.IsNullOrEmpty(file.Description))
+                        {
+                            var descText = new TextBlock
+                            {
+                                Text = file.Description,
+                                TextWrapping = TextWrapping.Wrap,
+                                Opacity = 0.7,
+                                FontSize = 12,
+                                Margin = new Thickness(0, 4, 0, 0)
+                            };
+                            Grid.SetRow(descText, 1);
+                            fileGrid.Children.Add(descText);
+                        }
+
+                        // Row 2: Metadata (Size, Downloads, Date Added)
+                        var metadataStack = new StackPanel
+                        {
+                            Orientation = Orientation.Horizontal,
+                            Spacing = 16,
+                            Margin = new Thickness(0, 4, 0, 0)
+                        };
+
+                        // Size
+                        var sizeText = new TextBlock
+                        {
+                            FontSize = 12,
+                            Opacity = 0.6
+                        };
+                        sizeText.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = SharedUtilities.GetTranslation(_lang, "Size") });
+                        sizeText.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = " " });
+                        sizeText.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = file.FileSizeFormatted });
+                        metadataStack.Children.Add(sizeText);
+
+                        // Downloads
+                        var downloadsText = new TextBlock
+                        {
+                            FontSize = 12,
+                            Opacity = 0.6
+                        };
+                        downloadsText.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = SharedUtilities.GetTranslation(_lang, "Downloads") });
+                        downloadsText.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = " " });
+                        downloadsText.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = file.DownloadCount.ToString("N0") });
+                        metadataStack.Children.Add(downloadsText);
+
+                        // Date Added
+                        var dateText = new TextBlock
+                        {
+                            FontSize = 12,
+                            Opacity = 0.6
+                        };
+                        dateText.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = SharedUtilities.GetTranslation(_lang, "Added") });
+                        dateText.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = " " });
+                        var dateAdded = DateTimeOffset.FromUnixTimeSeconds(file.DateAdded).LocalDateTime;
+                        dateText.Inlines.Add(new Microsoft.UI.Xaml.Documents.Run { Text = dateAdded.ToString("d MMM yyyy") });
+                        metadataStack.Children.Add(dateText);
+
+                        Grid.SetRow(metadataStack, 2);
+                        fileGrid.Children.Add(metadataStack);
+
+                        fileCheckBox.Content = fileGrid;
+
+                        // Bind IsChecked to file.IsSelected
+                        fileCheckBox.Checked += (s, e) => 
+                        { 
+                            file.IsSelected = true;
+                            ValidateInputs(); // Revalidate when file is selected
+                        };
+                        fileCheckBox.Unchecked += (s, e) => 
+                        { 
+                            file.IsSelected = false;
+                            ValidateInputs(); // Revalidate when file is unselected
+                        };
+
+                        fileStack.Children.Add(fileCheckBox);
+                    }
+
+                    fileScrollViewer.Content = fileStack;
+                    fileBorder.Child = fileScrollViewer;
+                    stackPanel.Children.Add(fileBorder);
+                }
 
                 // Category selection (only show in normal mode)
                 var categoryLabel = new TextBlock
@@ -650,17 +789,20 @@ namespace FlairX_Mod_Manager.Dialogs
                 // Determine folder name: sanitize to prevent illegal characters
                 string categoryFolderName = SanitizeCategoryName(category);
 
-                // Download files
+                // Download files (only selected ones)
                 var tempDir = Path.Combine(Path.GetTempPath(), "FlairX_Downloads", Guid.NewGuid().ToString());
                 Directory.CreateDirectory(tempDir);
 
                 var downloadedFiles = new List<(string filePath, string fileName)>();
 
-                for (int i = 0; i < _selectedFiles.Count; i++)
+                // Filter to only selected files
+                var filesToDownload = _selectedFiles.Where(f => f.IsSelected).ToList();
+                
+                for (int i = 0; i < filesToDownload.Count; i++)
                 {
-                    var file = _selectedFiles[i];
+                    var file = filesToDownload[i];
                     _downloadStatusText.Text = string.Format(SharedUtilities.GetTranslation(_lang, "DownloadingFile"), 
-                        file.FileName, i + 1, _selectedFiles.Count);
+                        file.FileName, i + 1, filesToDownload.Count);
 
                     var tempFilePath = Path.Combine(tempDir, file.FileName);
                     var progress = new Progress<double>(value =>
@@ -691,7 +833,7 @@ namespace FlairX_Mod_Manager.Dialogs
                 
                 if (hasArchives)
                 {
-                    if (_selectedFiles.Count == 1)
+                    if (filesToDownload.Count == 1)
                     {
                         // Single file - extract directly to mod folder (old behavior)
                         _downloadedArchivePath = downloadedFiles[0].filePath;
@@ -789,6 +931,10 @@ namespace FlairX_Mod_Manager.Dialogs
             catch (Exception ex)
             {
                 Logger.LogError("Failed to download and install mod", ex);
+                
+                // Cleanup failed installation if it was a new mod
+                CleanupFailedInstallation();
+                
                 await ShowError(string.Format(SharedUtilities.GetTranslation(_lang, "InstallationFailed"), ex.Message));
                 IsPrimaryButtonEnabled = true;
                 IsSecondaryButtonEnabled = true;
@@ -840,7 +986,7 @@ namespace FlairX_Mod_Manager.Dialogs
                     {
                         Directory.CreateDirectory(modPath);
                         // Create mod.json for new mod
-                        await CreateModJson(modPath);
+                        await CreateModJson(modPath, _categoryComboBox.Text.Trim());
                     }
                 }
 
@@ -1143,7 +1289,7 @@ namespace FlairX_Mod_Manager.Dialogs
                 }
 
                 // Create mod.json
-                await CreateModJson(modPath);
+                await CreateModJson(modPath, _categoryComboBox.Text.Trim());
                 
                 // Save mod path for preview download
                 _installedModPath = modPath;
@@ -1300,7 +1446,7 @@ namespace FlairX_Mod_Manager.Dialogs
                 }
 
                 // Create mod.json in main mod folder
-                await CreateModJson(modPath);
+                await CreateModJson(modPath, _categoryComboBox.Text.Trim());
 
                 // If mod was active before update, reactivate it
                 if (wasActive)
@@ -1383,7 +1529,7 @@ namespace FlairX_Mod_Manager.Dialogs
                 }
 
                 // Create mod.json
-                await CreateModJson(modPath);
+                await CreateModJson(modPath, _categoryComboBox.Text.Trim());
 
                 // Restore active status if mod was active before update
                 if (wasActive)
@@ -1409,27 +1555,30 @@ namespace FlairX_Mod_Manager.Dialogs
             }
         }
 
-        private async Task CreateModJson(string modPath)
+        private async Task CreateModJson(string modPath, string categoryName)
         {
             var modJsonPath = Path.Combine(modPath, "mod.json");
             
-            // Use version from API (_sVersion)
+            // Use version from API (_version)
             string version = _version ?? "";
             
-            // Convert timestamp to date string
-            string dateUpdated = "0000-00-00";
+            // gbChangeDate = server's last update date (from GameBanana)
+            string gbChangeDate = "0000-00-00";
             if (_dateUpdatedTimestamp > 0)
             {
                 try
                 {
                     var date = DateTimeOffset.FromUnixTimeSeconds(_dateUpdatedTimestamp).DateTime;
-                    dateUpdated = date.ToString("yyyy-MM-dd");
+                    gbChangeDate = date.ToString("yyyy-MM-dd");
                 }
                 catch
                 {
-                    dateUpdated = "0000-00-00";
+                    gbChangeDate = "0000-00-00";
                 }
             }
+            
+            // dateUpdated = when user installed/updated the mod locally (now)
+            string dateUpdated = DateTime.Now.ToString("yyyy-MM-dd");
             
             var modJson = new
             {
@@ -1438,12 +1587,19 @@ namespace FlairX_Mod_Manager.Dialogs
                 version = string.IsNullOrWhiteSpace(version) ? " " : version,
                 dateChecked = DateTime.Now.ToString("yyyy-MM-dd"),
                 dateUpdated = dateUpdated,
+                gbChangeDate = gbChangeDate,
                 isNSFW = _isNSFW,
                 hotkeys = new object[] { }
             };
 
             var json = System.Text.Json.JsonSerializer.Serialize(modJson, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
             await Services.FileAccessQueue.WriteAllTextAsync(modJsonPath, json);
+            
+            // Remove from outdated list since we just installed/updated it
+            var modName = Path.GetFileName(modPath);
+            if (modName.StartsWith("DISABLED_", StringComparison.OrdinalIgnoreCase))
+                modName = modName.Substring(9);
+            ModListManager.RemoveFromOutdatedList(categoryName, modName);
         }
         
         private async Task<string> FetchVersionFromGameBanana(string url)
@@ -2027,6 +2183,14 @@ namespace FlairX_Mod_Manager.Dialogs
                           !string.IsNullOrWhiteSpace(category) &&
                           !IsReservedWindowsName(modName) && 
                           !IsReservedWindowsName(category);
+            
+            // Check if at least one file is selected (if files are available)
+            if (_selectedFiles != null && _selectedFiles.Count > 0)
+            {
+                bool hasSelectedFile = _selectedFiles.Any(f => f.IsSelected);
+                isValid = isValid && hasSelectedFile;
+            }
+            
             IsPrimaryButtonEnabled = isValid;
         }
 
@@ -2164,6 +2328,12 @@ namespace FlairX_Mod_Manager.Dialogs
             {
                 var mainWindow = (App.Current as App)?.MainWindow as MainWindow;
                 mainWindow?.CurrentModGridPage?.RefreshModTileImage(modPath);
+                
+                // Also refresh HasUpdate status by re-reading mod.json
+                mainWindow?.CurrentModGridPage?.RefreshModTileStatus(modPath);
+                
+                // Force reload of outdated mods view if it's currently shown
+                mainWindow?.CurrentModGridPage?.RefreshOutdatedView();
             }
             catch (Exception ex)
             {

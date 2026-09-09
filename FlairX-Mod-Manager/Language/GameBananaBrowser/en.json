@@ -110,5 +110,6 @@
     "RecentWindow_CappedTitle": "Results limited",
     "RecentWindow_CappedWarning": "Results reached the safety limit of 10 pages or 500 records.",
     "GB_LoadImages": "Load Images",
-    "GB_NoDescription": "No description available."
+    "GB_NoDescription": "No description available.",
+    "SelectFilesToDownload": "Select Files to Download"
 }

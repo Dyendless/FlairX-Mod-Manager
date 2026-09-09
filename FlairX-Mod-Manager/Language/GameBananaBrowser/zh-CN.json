@@ -110,5 +110,6 @@
     "RecentWindow_CappedTitle": "结果受限",
     "RecentWindow_CappedWarning": "结果已达到 10 页或 500 条的安全上限。",
     "GB_LoadImages": "加载图片",
-    "GB_NoDescription": "暂无描述。"
+    "GB_NoDescription": "暂无描述。",
+    "SelectFilesToDownload": "选择要下载的文件"
 }
