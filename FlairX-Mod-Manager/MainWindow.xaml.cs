@@ -1038,6 +1038,15 @@ namespace FlairX_Mod_Manager
                 UpdateAllModsButtonText(isCategoriesView);
             }
         }
+        
+        /// <summary>
+        /// Public method to reload manager - same as clicking Reload button
+        /// Used after data changes (like GameBanana auto-update)
+        /// </summary>
+        public async Task ReloadManagerView()
+        {
+            await ReloadModsAsync();
+        }
 
         public List<(string Name, string Hotkey)> GetRegisteredHotkeyInfo()
             => _globalHotkeyManager?.GetRegisteredHotkeyInfo() ?? new();

@@ -402,5 +402,6 @@
   "ContextMenu_QuickUpdate": "Actualizare rapidă",
   "Loading": "Se încarcă...",
   "ConnectionErrorTitle": "Eroare de conexiune",
-  "ConnectionErrorMessage": "Nu s-a putut conecta la GameBanana. Verificați conexiunea la internet și încercați din nou."
+  "ConnectionErrorMessage": "Nu s-a putut conecta la GameBanana. Verificați conexiunea la internet și încercați din nou.",
+  "Favourites": "Favorite"
 }

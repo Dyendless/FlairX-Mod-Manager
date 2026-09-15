@@ -402,5 +402,6 @@
   "ContextMenu_QuickUpdate": "Snelle update",
   "Loading": "Laden...",
   "ConnectionErrorTitle": "Verbindingsfout",
-  "ConnectionErrorMessage": "Kan geen verbinding maken met GameBanana. Controleer je internetverbinding en probeer het opnieuw."
+  "ConnectionErrorMessage": "Kan geen verbinding maken met GameBanana. Controleer je internetverbinding en probeer het opnieuw.",
+  "Favourites": "Favorieten"
 }

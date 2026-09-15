@@ -402,5 +402,6 @@
   "ConnectionErrorTitle": "连接错误",
   "ConnectionErrorMessage": "无法连接到GameBanana。请检查您的互联网连接并重试。",
   "Category_Duplicates": "重复项",
-  "ShowDuplicates": "显示重复项"
+  "ShowDuplicates": "显示重复项",
+  "Favourites": "收藏夹"
 }

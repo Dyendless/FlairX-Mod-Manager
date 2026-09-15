@@ -402,5 +402,6 @@
   "ContextMenu_QuickUpdate": "Gyors frissítés",
   "Loading": "Betöltés...",
   "ConnectionErrorTitle": "Kapcsolati hiba",
-  "ConnectionErrorMessage": "Nem sikerült csatlakozni a GameBananához. Ellenőrizze az internetkapcsolatát, és próbálja újra."
+  "ConnectionErrorMessage": "Nem sikerült csatlakozni a GameBananához. Ellenőrizze az internetkapcsolatát, és próbálja újra.",
+  "Favourites": "Kedvencek"
 }

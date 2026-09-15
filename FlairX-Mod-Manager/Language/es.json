@@ -402,5 +402,6 @@
   "ContextMenu_QuickUpdate": "Actualización rápida",
   "Loading": "Cargando...",
   "ConnectionErrorTitle": "Error de conexión",
-  "ConnectionErrorMessage": "No se pudo conectar a GameBanana. Por favor, verifique su conexión a Internet e intente nuevamente."
+  "ConnectionErrorMessage": "No se pudo conectar a GameBanana. Por favor, verifique su conexión a Internet e intente nuevamente.",
+  "Favourites": "Favoritos"
 }

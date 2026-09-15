@@ -402,5 +402,6 @@
   "ContextMenu_QuickUpdate": "Pembaruan cepat",
   "Loading": "Memuat...",
   "ConnectionErrorTitle": "Kesalahan Koneksi",
-  "ConnectionErrorMessage": "Gagal terhubung ke GameBanana. Harap periksa koneksi internet Anda dan coba lagi."
+  "ConnectionErrorMessage": "Gagal terhubung ke GameBanana. Harap periksa koneksi internet Anda dan coba lagi.",
+  "Favourites": "Favorit"
 }

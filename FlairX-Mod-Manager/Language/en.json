@@ -402,5 +402,6 @@
   "ContextMenu_QuickUpdate": "Quick Update",
   "Loading": "Loading...",
   "ConnectionErrorTitle": "Connection Error",
-  "ConnectionErrorMessage": "Failed to connect to GameBanana. Please check your internet connection and try again."
+  "ConnectionErrorMessage": "Failed to connect to GameBanana. Please check your internet connection and try again.",
+  "Favourites": "Favourites"
 }

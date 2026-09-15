@@ -402,5 +402,6 @@
   "ContextMenu_QuickUpdate": "Hurtigoppdatering",
   "Loading": "Laster...",
   "ConnectionErrorTitle": "Tilkoblingsfeil",
-  "ConnectionErrorMessage": "Kunne ikke koble til GameBanana. Sjekk internettforbindelsen din og prøv igjen."
+  "ConnectionErrorMessage": "Kunne ikke koble til GameBanana. Sjekk internettforbindelsen din og prøv igjen.",
+  "Favourites": "Favoritter"
 }

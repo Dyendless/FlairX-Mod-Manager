@@ -402,5 +402,6 @@
   "ContextMenu_QuickUpdate": "Hızlı güncelleme",
   "Loading": "Yükleniyor...",
   "ConnectionErrorTitle": "Bağlantı Hatası",
-  "ConnectionErrorMessage": "GameBanana'ya bağlanılamadı. İnternet bağlantınızı kontrol edin ve tekrar deneyin."
+  "ConnectionErrorMessage": "GameBanana'ya bağlanılamadı. İnternet bağlantınızı kontrol edin ve tekrar deneyin.",
+  "Favourites": "Favoriler"
 }

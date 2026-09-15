@@ -402,5 +402,6 @@
   "ContextMenu_QuickUpdate": "빠른 업데이트",
   "Loading": "로딩 중...",
   "ConnectionErrorTitle": "연결 오류",
-  "ConnectionErrorMessage": "GameBanana에 연결할 수 없습니다. 인터넷 연결을 확인하고 다시 시도하십시오."
+  "ConnectionErrorMessage": "GameBanana에 연결할 수 없습니다. 인터넷 연결을 확인하고 다시 시도하십시오.",
+  "Favourites": "즐겨찾기"
 }

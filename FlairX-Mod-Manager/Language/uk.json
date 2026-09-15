@@ -402,5 +402,6 @@
   "ContextMenu_QuickUpdate": "Швидке оновлення",
   "Loading": "Завантаження...",
   "ConnectionErrorTitle": "Помилка з'єднання",
-  "ConnectionErrorMessage": "Не вдалося підключитися до GameBanana. Перевірте підключення до Інтернету та повторіть спробу."
+  "ConnectionErrorMessage": "Не вдалося підключитися до GameBanana. Перевірте підключення до Інтернету та повторіть спробу.",
+  "Favourites": "Вибране"
 }

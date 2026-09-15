@@ -402,5 +402,6 @@
   "ContextMenu_QuickUpdate": "快速更新",
   "Loading": "載入中...",
   "ConnectionErrorTitle": "連接錯誤",
-  "ConnectionErrorMessage": "無法連接到GameBanana。請檢查您的網路連接並重試。"
+  "ConnectionErrorMessage": "無法連接到GameBanana。請檢查您的網路連接並重試。",
+  "Favourites": "我的最愛"
 }

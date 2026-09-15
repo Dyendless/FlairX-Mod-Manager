@@ -402,5 +402,6 @@
   "ContextMenu_QuickUpdate": "Nopea päivitys",
   "Loading": "Ladataan...",
   "ConnectionErrorTitle": "Yhteysvirhe",
-  "ConnectionErrorMessage": "GameBananaan yhdistäminen epäonnistui. Tarkista internet-yhteytesi ja yritä uudelleen."
+  "ConnectionErrorMessage": "GameBananaan yhdistäminen epäonnistui. Tarkista internet-yhteytesi ja yritä uudelleen.",
+  "Favourites": "Suosikit"
 }

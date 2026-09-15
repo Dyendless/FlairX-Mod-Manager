@@ -402,5 +402,6 @@
   "ContextMenu_QuickUpdate": "Schnellaktualisierung",
   "Loading": "Wird geladen...",
   "ConnectionErrorTitle": "Verbindungsfehler",
-  "ConnectionErrorMessage": "Verbindung zu GameBanana fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut."
+  "ConnectionErrorMessage": "Verbindung zu GameBanana fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
+  "Favourites": "Favoriten"
 }

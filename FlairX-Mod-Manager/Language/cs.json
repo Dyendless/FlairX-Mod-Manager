@@ -402,5 +402,6 @@
   "ContextMenu_QuickUpdate": "Rychlá aktualizace",
   "Loading": "Načítání...",
   "ConnectionErrorTitle": "Chyba připojení",
-  "ConnectionErrorMessage": "Nepodařilo se připojit k GameBanana. Zkontrolujte připojení k internetu a zkuste to znovu."
+  "ConnectionErrorMessage": "Nepodařilo se připojit k GameBanana. Zkontrolujte připojení k internetu a zkuste to znovu.",
+  "Favourites": "Oblíbené"
 }

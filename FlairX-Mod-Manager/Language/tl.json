@@ -402,5 +402,6 @@
   "ConnectionErrorTitle": "Error sa Koneksyon",
   "ConnectionErrorMessage": "Hindi makakonekta sa GameBanana. Pakisuri ang iyong koneksyon sa internet at subukan muli.",
   "Category_Duplicates": "Mga Duplikado",
-  "ShowDuplicates": "Ipakita ang mga duplikado"
+  "ShowDuplicates": "Ipakita ang mga duplikado",
+  "Favourites": "Mga Paborito"
 }

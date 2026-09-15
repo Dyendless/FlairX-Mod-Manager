@@ -402,5 +402,6 @@
   "ContextMenu_QuickUpdate": "Cập nhật nhanh",
   "Loading": "Đang tải...",
   "ConnectionErrorTitle": "Lỗi kết nối",
-  "ConnectionErrorMessage": "Không thể kết nối với GameBanana. Vui lòng kiểm tra kết nối internet của bạn và thử lại."
+  "ConnectionErrorMessage": "Không thể kết nối với GameBanana. Vui lòng kiểm tra kết nối internet của bạn và thử lại.",
+  "Favourites": "Yêu thích"
 }

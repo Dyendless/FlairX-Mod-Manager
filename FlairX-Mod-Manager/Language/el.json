@@ -402,5 +402,6 @@
   "ContextMenu_QuickUpdate": "Γρήγορη ενημέρωση",
   "Loading": "Φόρτωση...",
   "ConnectionErrorTitle": "Σφάλμα σύνδεσης",
-  "ConnectionErrorMessage": "Αποτυχία σύνδεσης στο GameBanana. Ελέγξτε τη σύνδεσή σας στο Διαδίκτυο και δοκιμάστε ξανά."
+  "ConnectionErrorMessage": "Αποτυχία σύνδεσης στο GameBanana. Ελέγξτε τη σύνδεσή σας στο Διαδίκτυο και δοκιμάστε ξανά.",
+  "Favourites": "Αγαπημένα"
 }

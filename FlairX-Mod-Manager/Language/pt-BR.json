@@ -402,5 +402,6 @@
   "ConnectionErrorTitle": "Erro de conexão",
   "ConnectionErrorMessage": "Falha ao conectar ao GameBanana. Verifique sua conexão com a internet e tente novamente.",
   "Category_Duplicates": "Duplicados",
-  "ShowDuplicates": "Mostrar duplicados"
+  "ShowDuplicates": "Mostrar duplicados",
+  "Favourites": "Favoritos"
 }

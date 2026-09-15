@@ -402,5 +402,6 @@
   "ContextMenu_QuickUpdate": "Hurtig opdatering",
   "Loading": "Indlæser...",
   "ConnectionErrorTitle": "Forbindelsesfejl",
-  "ConnectionErrorMessage": "Kunne ikke oprette forbindelse til GameBanana. Tjek din internetforbindelse og prøv igen."
+  "ConnectionErrorMessage": "Kunne ikke oprette forbindelse til GameBanana. Tjek din internetforbindelse og prøv igen.",
+  "Favourites": "Favoritter"
 }
