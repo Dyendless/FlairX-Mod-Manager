@@ -419,5 +419,9 @@
   "ModInfoBackup_Cancelled": "Kinansela ang backup",
   "ModInfoBackup_Cancel": "Kanselahin",
   "ContextMenu_QuickUpdate": "Mabilis na pag-update",
-  "Loading": "Naglo-load..."
+  "Loading": "Naglo-load...",
+  "ConnectionErrorTitle": "Error sa Koneksyon",
+  "ConnectionErrorMessage": "Hindi makakonekta sa GameBanana. Pakisuri ang iyong koneksyon sa internet at subukan muli.",
+  "Category_Duplicates": "Mga Duplikado",
+  "ShowDuplicates": "Ipakita ang mga duplikado"
 }

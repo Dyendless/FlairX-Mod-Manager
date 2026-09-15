@@ -421,5 +421,7 @@
   "ModInfoBackup_Cancelled": "बैकअप रद्द किया गया",
   "ModInfoBackup_Cancel": "रद्द करें",
   "ContextMenu_QuickUpdate": "त्वरित अपडेट",
-  "Loading": "लोड हो रहा है..."
+  "Loading": "लोड हो रहा है...",
+  "ConnectionErrorTitle": "कनेक्शन त्रुटि",
+  "ConnectionErrorMessage": "GameBanana से कनेक्ट करने में विफल। कृपया अपना इंटरनेट कनेक्शन जांचें और पुनः प्रयास करें।"
 }

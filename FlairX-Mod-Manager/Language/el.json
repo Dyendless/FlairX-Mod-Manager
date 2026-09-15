@@ -419,5 +419,8 @@
   "Category_Duplicates": "Διπλότυπα mods",
   "ModInfoBackup_Cancel": "Cancel",
   "ContextMenu_QuickUpdate": "Γρήγορη ενημέρωση",
-  "Loading": "Φόρτωση..."
+  "Loading": "Φόρτωση...",
+  "ConnectionErrorTitle": "Σφάλμα σύνδεσης",
+  "ConnectionErrorMessage": "Αποτυχία σύνδεσης στο GameBanana. Ελέγξτε τη σύνδεσή σας στο Διαδίκτυο και δοκιμάστε ξανά.",
+  "ModInfoBackup_Cancelled": "Ακυρώθηκε"
 }

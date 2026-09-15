@@ -420,5 +420,8 @@
   "Category_Duplicates": "Mods duplicados",
   "ModInfoBackup_Cancel": "Cancel",
   "ContextMenu_QuickUpdate": "Actualização rápida",
-  "Loading": "A carregar..."
+  "Loading": "A carregar...",
+  "ConnectionErrorTitle": "Erro de conexão",
+  "ConnectionErrorMessage": "Falha ao conectar ao GameBanana. Verifique sua conexão com a Internet e tente novamente.",
+  "ModInfoBackup_Cancelled": "Cancelado"
 }

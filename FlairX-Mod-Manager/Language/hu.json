@@ -420,5 +420,8 @@
   "Category_Duplicates": "Duplikált modok",
   "ModInfoBackup_Cancel": "Cancel",
   "ContextMenu_QuickUpdate": "Gyors frissítés",
-  "Loading": "Betöltés..."
+  "Loading": "Betöltés...",
+  "ConnectionErrorTitle": "Kapcsolati hiba",
+  "ConnectionErrorMessage": "Nem sikerült csatlakozni a GameBananához. Ellenőrizze az internetkapcsolatát, és próbálja újra.",
+  "ModInfoBackup_Cancelled": "Megszakítva"
 }

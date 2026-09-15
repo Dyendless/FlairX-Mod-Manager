@@ -420,5 +420,8 @@
   "Category_Duplicates": "Moduri duplicate",
   "ModInfoBackup_Cancel": "Cancel",
   "ContextMenu_QuickUpdate": "Actualizare rapidă",
-  "Loading": "Se încarcă..."
+  "Loading": "Se încarcă...",
+  "ConnectionErrorTitle": "Eroare de conexiune",
+  "ConnectionErrorMessage": "Nu s-a putut conecta la GameBanana. Verificați conexiunea la internet și încercați din nou.",
+  "ModInfoBackup_Cancelled": "Anulat"
 }

@@ -420,5 +420,8 @@
   "Category_Duplicates": "Mod duplikat",
   "ModInfoBackup_Cancel": "Cancel",
   "ContextMenu_QuickUpdate": "Pembaruan cepat",
-  "Loading": "Memuat..."
+  "Loading": "Memuat...",
+  "ConnectionErrorTitle": "Kesalahan Koneksi",
+  "ConnectionErrorMessage": "Gagal terhubung ke GameBanana. Harap periksa koneksi internet Anda dan coba lagi.",
+  "ModInfoBackup_Cancelled": "Dibatalkan"
 }

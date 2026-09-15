@@ -421,5 +421,7 @@
   "ModInfoBackup_Cancelled": "Yedekleme iptal edildi",
   "ModInfoBackup_Cancel": "İptal",
   "ContextMenu_QuickUpdate": "Hızlı güncelleme",
-  "Loading": "Yükleniyor..."
+  "Loading": "Yükleniyor...",
+  "ConnectionErrorTitle": "Bağlantı Hatası",
+  "ConnectionErrorMessage": "GameBanana'ya bağlanılamadı. İnternet bağlantınızı kontrol edin ve tekrar deneyin."
 }

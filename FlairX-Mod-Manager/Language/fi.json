@@ -419,5 +419,8 @@
   "Category_Duplicates": "Päällekkäiset modit",
   "ModInfoBackup_Cancel": "Cancel",
   "ContextMenu_QuickUpdate": "Nopea päivitys",
-  "Loading": "Ladataan..."
+  "Loading": "Ladataan...",
+  "ConnectionErrorTitle": "Yhteysvirhe",
+  "ConnectionErrorMessage": "GameBananaan yhdistäminen epäonnistui. Tarkista internet-yhteytesi ja yritä uudelleen.",
+  "ModInfoBackup_Cancelled": "Peruutettu"
 }

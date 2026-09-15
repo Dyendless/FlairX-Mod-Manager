@@ -419,5 +419,9 @@
   "ModInfoBackup_Cancelled": "备份已取消",
   "ModInfoBackup_Cancel": "取消",
   "ContextMenu_QuickUpdate": "快速更新",
-  "Loading": "加载中..."
+  "Loading": "加载中...",
+  "ConnectionErrorTitle": "连接错误",
+  "ConnectionErrorMessage": "无法连接到GameBanana。请检查您的互联网连接并重试。",
+  "Category_Duplicates": "重复项",
+  "ShowDuplicates": "显示重复项"
 }

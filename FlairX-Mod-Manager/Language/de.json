@@ -420,5 +420,7 @@
   "ModInfoBackup_Cancelled": "Sicherung abgebrochen",
   "ModInfoBackup_Cancel": "Abbrechen",
   "ContextMenu_QuickUpdate": "Schnellaktualisierung",
-  "Loading": "Wird geladen..."
+  "Loading": "Wird geladen...",
+  "ConnectionErrorTitle": "Verbindungsfehler",
+  "ConnectionErrorMessage": "Verbindung zu GameBanana fehlgeschlagen. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut."
 }

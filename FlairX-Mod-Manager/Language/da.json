@@ -419,5 +419,8 @@
   "Category_Duplicates": "Duplikerede mods",
   "ModInfoBackup_Cancel": "Cancel",
   "ContextMenu_QuickUpdate": "Hurtig opdatering",
-  "Loading": "Indlæser..."
+  "Loading": "Indlæser...",
+  "ConnectionErrorTitle": "Forbindelsesfejl",
+  "ConnectionErrorMessage": "Kunne ikke oprette forbindelse til GameBanana. Tjek din internetforbindelse og prøv igen.",
+  "ModInfoBackup_Cancelled": "Annulleret"
 }

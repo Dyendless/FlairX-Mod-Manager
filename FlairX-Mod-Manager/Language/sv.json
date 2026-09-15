@@ -420,5 +420,8 @@
   "Category_Duplicates": "Dubbla mods",
   "ModInfoBackup_Cancel": "Cancel",
   "ContextMenu_QuickUpdate": "Snabb uppdatering",
-  "Loading": "Laddar..."
+  "Loading": "Laddar...",
+  "ConnectionErrorTitle": "Anslutningsfel",
+  "ConnectionErrorMessage": "Det gick inte att ansluta till GameBanana. Kontrollera din internetanslutning och försök igen.",
+  "ModInfoBackup_Cancelled": "Avbruten"
 }

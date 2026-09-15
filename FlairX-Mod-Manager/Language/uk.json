@@ -420,5 +420,8 @@
   "Category_Duplicates": "Дублікати модів",
   "ModInfoBackup_Cancel": "Cancel",
   "ContextMenu_QuickUpdate": "Швидке оновлення",
-  "Loading": "Завантаження..."
+  "Loading": "Завантаження...",
+  "ConnectionErrorTitle": "Помилка з'єднання",
+  "ConnectionErrorMessage": "Не вдалося підключитися до GameBanana. Перевірте підключення до Інтернету та повторіть спробу.",
+  "ModInfoBackup_Cancelled": "Скасовано"
 }

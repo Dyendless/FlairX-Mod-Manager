@@ -420,5 +420,7 @@
   "ModInfoBackup_Cancelled": "Záloha zrušena",
   "ModInfoBackup_Cancel": "Zrušit",
   "ContextMenu_QuickUpdate": "Rychlá aktualizace",
-  "Loading": "Načítání..."
+  "Loading": "Načítání...",
+  "ConnectionErrorTitle": "Chyba připojení",
+  "ConnectionErrorMessage": "Nepodařilo se připojit k GameBanana. Zkontrolujte připojení k internetu a zkuste to znovu."
 }

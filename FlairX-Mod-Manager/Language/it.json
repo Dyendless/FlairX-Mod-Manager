@@ -421,5 +421,7 @@
   "ModInfoBackup_Cancelled": "Backup annullato",
   "ModInfoBackup_Cancel": "Annulla",
   "ContextMenu_QuickUpdate": "Aggiornamento rapido",
-  "Loading": "Caricamento..."
+  "Loading": "Caricamento...",
+  "ConnectionErrorTitle": "Errore di connessione",
+  "ConnectionErrorMessage": "Impossibile connettersi a GameBanana. Controlla la tua connessione Internet e riprova."
 }
