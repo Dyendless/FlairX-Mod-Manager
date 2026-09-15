@@ -20,3 +20,6 @@ FlairX-Mod-Manager Launcher/Properties/PublishProfiles/FolderProfile.pubxml.user
 /ModFix
 check_translations.py
 remove_unused_connectionerror.py
+remove_unused_keys.py
+remove_gbauthor_keys.py
+check_missing_keys.py
