@@ -20,8 +20,8 @@ namespace FlairX_Mod_Manager
         private readonly SemaphoreSlim _menuGenerationLock = new SemaphoreSlim(1, 1);
         private volatile bool _suppressMenuRegeneration = false;
         
-        // Dictionary to store star buttons for each category
-        private readonly Dictionary<string, (Button button, FontIcon icon)> _categoryStarButtons = new Dictionary<string, (Button, FontIcon)>();
+        // Dictionary to store star buttons, presenters, and grid columns for each category
+        private readonly Dictionary<string, (Button button, FontIcon icon, ContentPresenter? presenter, ColumnDefinition? column)> _categoryStarButtons = new Dictionary<string, (Button, FontIcon, ContentPresenter?, ColumnDefinition?)>();
         
         private void UpdateGameSelectionComboBoxTexts()
         {
@@ -306,8 +306,9 @@ namespace FlairX_Mod_Manager
                                 // Add character categories (already sorted), excluding pinned and hidden
                                 if (sortedCategories != null && pinnedCategories != null && hiddenCategories != null)
                                 {
-                                    // Group categories by first letter for alphabetical sections
-                                    var categoryGroups = new Dictionary<char, List<string>>();
+                                    // Separate favorites and non-favorites
+                                    var favoriteCategories = new List<string>();
+                                    var regularCategories = new List<string>();
                                     
                                     foreach (var category in sortedCategories)
                                     {
@@ -327,6 +328,53 @@ namespace FlairX_Mod_Manager
                                                 continue;
                                         }
                                         
+                                        // Check if favorite
+                                        var currentGameTag = SettingsManager.CurrentSelectedGame ?? "";
+                                        bool isFavorite = SettingsManager.IsCategoryFavorite(currentGameTag, category);
+                                        
+                                        if (isFavorite)
+                                            favoriteCategories.Add(category);
+                                        else
+                                            regularCategories.Add(category);
+                                    }
+                                    
+                                    // Add Favourites section if there are any favorites
+                                    if (favoriteCategories.Count > 0)
+                                    {
+                                        // Create Favourites header
+                                        var brush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 215, 0)); // Gold color for favorites
+                                        
+                                        var headerText = new TextBlock
+                                        {
+                                            Text = $"────── {SharedUtilities.GetTranslation(_lang, "Favourites")} ──────",
+                                            TextAlignment = TextAlignment.Center,
+                                            HorizontalAlignment = HorizontalAlignment.Center,
+                                            Foreground = brush
+                                        };
+                                        
+                                        var headerItem = new NavigationViewItem
+                                        {
+                                            Content = headerText,
+                                            IsEnabled = true,
+                                            SelectsOnInvoked = false,
+                                            HorizontalContentAlignment = HorizontalAlignment.Center,
+                                            Tag = "__SECTION_HEADER_FAVOURITES__"
+                                        };
+                                        
+                                        nvSample.MenuItems.Add(headerItem);
+                                        
+                                        // Add favorite categories
+                                        foreach (var category in favoriteCategories.OrderBy(c => c, StringComparer.OrdinalIgnoreCase))
+                                        {
+                                            await AddCategoryToMenu(category, modsPath, true);
+                                        }
+                                    }
+                                    
+                                    // Group regular (non-favorite) categories by first letter for alphabetical sections
+                                    var categoryGroups = new Dictionary<char, List<string>>();
+                                    
+                                    foreach (var category in regularCategories)
+                                    {
                                         // Get first character
                                         char firstChar = category[0];
                                         char sectionKey;
@@ -384,92 +432,10 @@ namespace FlairX_Mod_Manager
                                         
                                         nvSample.MenuItems.Add(headerItem);
                                         
-                                        // Add categories in this section
-                                        foreach (var category in categoryGroups[letter])
+                                        // Add categories in this section (sorted alphabetically)
+                                        foreach (var category in categoryGroups[letter].OrderBy(c => c, StringComparer.OrdinalIgnoreCase))
                                         {
-                                            var currentGameTag = SettingsManager.CurrentSelectedGame ?? "";
-                                            bool isFavorite = SettingsManager.IsCategoryFavorite(currentGameTag, category);
-                                            
-                                            // Create star icon
-                                            var starIcon = new FontIcon
-                                            {
-                                                Glyph = isFavorite ? "\uE735" : "\uE734",
-                                                FontSize = 14,
-                                                Foreground = isFavorite 
-                                                    ? new SolidColorBrush(Microsoft.UI.Colors.Gold) 
-                                                    : new SolidColorBrush(Microsoft.UI.Colors.White)
-                                            };
-                                            
-                                            // Create star button for the first column
-                                            var starButton = new Button
-                                            {
-                                                Content = starIcon,
-                                                Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
-                                                BorderThickness = new Thickness(0),
-                                                Padding = new Thickness(0),
-                                                VerticalAlignment = VerticalAlignment.Center,
-                                                HorizontalAlignment = HorizontalAlignment.Center,
-                                                Width = 28,
-                                                Height = 28,
-                                                Tag = category
-                                            };
-                                            
-                                            // Store in dictionary for later access
-                                            _categoryStarButtons[category] = (starButton, starIcon);
-                                            
-                                            var menuItem = new NavigationViewItem
-                                            {
-                                                Content = category,
-                                                Tag = $"Category_{category}",
-                                                Icon = await CreateCategoryIconAsync(category, modsPath),
-                                                Style = (Style)Application.Current.Resources["CategoryAvatarNavigationViewItem"]
-                                            };
-                                            
-                                            // Handle star click
-                                            starButton.Click += (s, e) =>
-                                            {
-                                                var catName = (string)((Button)s).Tag;
-                                                var currentGameTag = SettingsManager.CurrentSelectedGame ?? "";
-                                                
-                                                SettingsManager.ToggleCategoryFavorite(currentGameTag, catName);
-                                                bool newFavoriteState = SettingsManager.IsCategoryFavorite(currentGameTag, catName);
-                                                
-                                                // Update icon
-                                                starIcon.Glyph = newFavoriteState ? "\uE735" : "\uE734";
-                                                starIcon.Foreground = newFavoriteState 
-                                                    ? new SolidColorBrush(Microsoft.UI.Colors.Gold) 
-                                                    : new SolidColorBrush(Microsoft.UI.Colors.White);
-                                                
-                                                // Re-sort menu items with animation
-                                                SortMenuItemsByFavoritesAnimated();
-                                                
-                                                // Only update ModGridPage if it's showing categories view
-                                                if (contentFrame.Content is Pages.ModGridPage modGridPage && 
-                                                    modGridPage.CurrentViewMode == Pages.ModGridPage.ViewMode.Categories)
-                                                {
-                                                    modGridPage.RefreshCategoryFavoritesAnimated();
-                                                }
-                                                
-                                                // Refresh overlay if it exists
-                                                if (OverlayWindow != null)
-                                                {
-                                                    OverlayWindow.RefreshOverlayData();
-                                                }
-                                                
-                                                Logger.LogInfo($"Toggled favorite for category in menu: {catName}, IsFavorite: {newFavoriteState}");
-                                            };
-                                            
-                                            // Add the menu item
-                                            nvSample.MenuItems.Add(menuItem);
-                                            
-                                            // Wait for the template to be applied, then attach star button, hover events, and context menu
-                                            menuItem.Loaded += async (s, e) => 
-                                            {
-                                                await Task.Delay(50);
-                                                AttachIconHoverEvents(menuItem, category, modsPath);
-                                                AttachStarButtonToMenuItem(menuItem, starButton);
-                                                AttachContextMenuToMenuItem(menuItem, category);
-                                            };
+                                            await AddCategoryToMenu(category, modsPath, false);
                                         }
                                     }
                                 }
@@ -504,6 +470,9 @@ namespace FlairX_Mod_Manager
                             {
                                 Logger.LogError("Error ensuring presets menu item exists in finally", innerEx);
                             }
+                            
+                            // Update star buttons visibility based on current display mode
+                            UpdateStarButtonsVisibility();
                             
                             // Signal completion so callers can rely on menu being populated
                             tcs.TrySetResult(true);
@@ -1081,6 +1050,27 @@ namespace FlairX_Mod_Manager
                 if (starPresenter != null)
                 {
                     starPresenter.Content = starButton;
+                    
+                    // Find the Grid that contains the StarPresenter and get its column
+                    var parentGrid = starPresenter.Parent as Grid;
+                    ColumnDefinition? starColumn = null;
+                    
+                    if (parentGrid != null && parentGrid.ColumnDefinitions.Count > 0)
+                    {
+                        // StarPresenter is typically in the last column (column 2)
+                        var columnIndex = Grid.GetColumn(starPresenter);
+                        if (columnIndex < parentGrid.ColumnDefinitions.Count)
+                        {
+                            starColumn = parentGrid.ColumnDefinitions[columnIndex];
+                        }
+                    }
+                    
+                    // Update dictionary with presenter and column reference
+                    var categoryName = (string)starButton.Tag;
+                    if (_categoryStarButtons.TryGetValue(categoryName, out var starData))
+                    {
+                        _categoryStarButtons[categoryName] = (starData.button, starData.icon, starPresenter, starColumn);
+                    }
                 }
             }
             catch (Exception ex)
@@ -1828,6 +1818,136 @@ namespace FlairX_Mod_Manager
             {
                 Logger.LogError("Error generating pinned categories", ex);
             }
+        }
+        
+        /// <summary>
+        /// Helper method to add a category to the navigation menu
+        /// </summary>
+        private async Task AddCategoryToMenu(string category, string modsPath, bool isFavorite)
+        {
+            var currentGameTag = SettingsManager.CurrentSelectedGame ?? "";
+            
+            // Create star icon
+            var starIcon = new FontIcon
+            {
+                Glyph = isFavorite ? "\uE735" : "\uE734",
+                FontSize = 14,
+                Foreground = isFavorite 
+                    ? new SolidColorBrush(Microsoft.UI.Colors.Gold) 
+                    : new SolidColorBrush(Microsoft.UI.Colors.White)
+            };
+            
+            // Create star button for the first column
+            var starButton = new Button
+            {
+                Content = starIcon,
+                Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                BorderThickness = new Thickness(0),
+                Padding = new Thickness(0),
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Width = 28,
+                Height = 28,
+                Tag = category
+            };
+            
+            // Store in dictionary for later access (presenter and column will be added when item loads)
+            _categoryStarButtons[category] = (starButton, starIcon, null, null);
+            
+            var menuItem = new NavigationViewItem
+            {
+                Content = category,
+                Tag = $"Category_{category}",
+                Icon = await CreateCategoryIconAsync(category, modsPath),
+                Style = (Style)Application.Current.Resources["CategoryAvatarNavigationViewItem"]
+            };
+            
+            // Handle star click
+            starButton.Click += (s, e) =>
+            {
+                var catName = (string)((Button)s).Tag;
+                var gameTag = SettingsManager.CurrentSelectedGame ?? "";
+                
+                SettingsManager.ToggleCategoryFavorite(gameTag, catName);
+                bool newFavoriteState = SettingsManager.IsCategoryFavorite(gameTag, catName);
+                
+                // Update icon
+                starIcon.Glyph = newFavoriteState ? "\uE735" : "\uE734";
+                starIcon.Foreground = newFavoriteState 
+                    ? new SolidColorBrush(Microsoft.UI.Colors.Gold) 
+                    : new SolidColorBrush(Microsoft.UI.Colors.White);
+                
+                // Regenerate menu to reorganize sections
+                _ = GenerateModCharacterMenuAsync();
+                
+                // Only update ModGridPage if it's showing categories view
+                if (contentFrame.Content is Pages.ModGridPage modGridPage && 
+                    modGridPage.CurrentViewMode == Pages.ModGridPage.ViewMode.Categories)
+                {
+                    modGridPage.RefreshCategoryFavoritesAnimated();
+                }
+                
+                // Refresh overlay if it exists
+                if (OverlayWindow != null)
+                {
+                    OverlayWindow.RefreshOverlayData();
+                }
+                
+                Logger.LogInfo($"Toggled favorite for category in menu: {catName}, IsFavorite: {newFavoriteState}");
+            };
+            
+            // Add the menu item
+            nvSample.MenuItems.Add(menuItem);
+            
+            // Wait for the template to be applied, then attach star button, hover events, and context menu
+            menuItem.Loaded += async (s, e) => 
+            {
+                await Task.Delay(50);
+                AttachIconHoverEvents(menuItem, category, modsPath);
+                AttachStarButtonToMenuItem(menuItem, starButton);
+                AttachContextMenuToMenuItem(menuItem, category);
+            };
+        }
+        
+        /// <summary>
+        /// Update star button visibility based on NavigationView pane display mode
+        /// </summary>
+        private void UpdateStarButtonsVisibility()
+        {
+            if (nvSample == null) return;
+            
+            Logger.LogInfo($"UpdateStarButtonsVisibility called - IsPaneOpen: {nvSample.IsPaneOpen}");
+            
+            // Hide stars when pane is closed (collapsed/compact mode)
+            var isVisible = nvSample.IsPaneOpen;
+            
+            Logger.LogInfo($"Star visibility: {isVisible}, Star buttons count: {_categoryStarButtons.Count}");
+            
+            // Update all star columns - set width to 0 to remove the space
+            foreach (var starData in _categoryStarButtons.Values)
+            {
+                if (starData.column != null)
+                {
+                    if (isVisible)
+                    {
+                        // Restore original width (Auto)
+                        starData.column.Width = new GridLength(1, GridUnitType.Auto);
+                    }
+                    else
+                    {
+                        // Hide column by setting width to 0
+                        starData.column.Width = new GridLength(0);
+                    }
+                }
+                
+                // Also update presenter visibility as backup
+                if (starData.presenter != null)
+                {
+                    starData.presenter.Visibility = isVisible ? Visibility.Visible : Visibility.Collapsed;
+                }
+            }
+            
+            Logger.LogInfo($"Star columns updated - visible: {isVisible}");
         }
     }
 }

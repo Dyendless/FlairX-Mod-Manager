@@ -488,6 +488,26 @@ namespace FlairX_Mod_Manager
             };
 
             nvSample.Loaded += NvSample_Loaded;
+            
+            // Handle pane open/close to show/hide star buttons
+            nvSample.PaneClosing += (s, args) =>
+            {
+                Logger.LogInfo("Pane closing - hiding stars");
+                UpdateStarButtonsVisibility();
+            };
+            
+            nvSample.PaneOpening += (s, args) =>
+            {
+                Logger.LogInfo("Pane opening - showing stars");
+                UpdateStarButtonsVisibility();
+            };
+            
+            nvSample.DisplayModeChanged += (s, args) =>
+            {
+                Logger.LogInfo($"DisplayModeChanged fired - new mode: {nvSample.DisplayMode}");
+                UpdateStarButtonsVisibility();
+            };
+            
             nvSample.Loaded += (s, e) =>
             {
                 if (OrangeAnimationProgressBar != null)
@@ -1017,6 +1037,15 @@ namespace FlairX_Mod_Manager
                 bool isCategoriesView = SettingsManager.Current.ViewMode == "Categories";
                 UpdateAllModsButtonText(isCategoriesView);
             }
+        }
+        
+        /// <summary>
+        /// Public method to reload manager - same as clicking Reload button
+        /// Used after data changes (like GameBanana auto-update)
+        /// </summary>
+        public async Task ReloadManagerView()
+        {
+            await ReloadModsAsync();
         }
 
         public List<(string Name, string Hotkey)> GetRegisteredHotkeyInfo()

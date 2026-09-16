@@ -105,6 +105,9 @@ namespace FlairX_Mod_Manager
             Logger.LogInfo("OnLaunched called - loading application settings");
             try
             {
+                // Clean up old downloaded files from previous sessions
+                CleanupOldDownloads();
+                
                 SettingsManager.Load(); // Load settings before creating window
                 Logger.LogInfo($"Settings loaded - Selected game index: {SettingsManager.Current.SelectedGameIndex}");
                 
@@ -749,5 +752,28 @@ namespace FlairX_Mod_Manager
         {
             // Delegate to centralized Logger
             Logger.LogGrid(message);
-        }    }
+        }
+
+        /// <summary>
+        /// Clean up old downloaded files from temp directory on app startup
+        /// </summary>
+        private void CleanupOldDownloads()
+        {
+            try
+            {
+                var tempDownloadsPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "FlairX_Downloads");
+                
+                if (Directory.Exists(tempDownloadsPath))
+                {
+                    Logger.LogInfo($"Cleaning up old downloads from: {tempDownloadsPath}");
+                    Directory.Delete(tempDownloadsPath, true);
+                    Logger.LogInfo("Temp downloads directory deleted successfully");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning($"Failed to cleanup old downloads: {ex.Message}");
+            }
+        }
+    }
 }

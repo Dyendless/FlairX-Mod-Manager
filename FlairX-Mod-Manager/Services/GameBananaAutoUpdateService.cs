@@ -67,17 +67,24 @@ namespace FlairX_Mod_Manager.Services
 
                 await FetchAllDataAsync(CancellationToken.None, silent: true, smartUpdate: false);
                 
-                // Update last run time
-                SettingsManager.Current.GameBananaLastAutoUpdate = DateTime.Now;
-                SettingsManager.Save();
-                
                 Logger.LogInfo($"GameBanana auto-update completed - Success: {_success}, Failed: {_fail}, Skipped: {_skip}");
 
-                // Show success notification
+                // Reload manager - same as manual update
                 if (mainWindow != null)
                 {
-                    mainWindow.DispatcherQueue.TryEnqueue(() =>
-                        mainWindow.ShowSuccessInfo(SharedUtilities.GetTranslation(lang, "UpdateSuccess")));
+                    mainWindow.DispatcherQueue.TryEnqueue(async () =>
+                    {
+                        mainWindow.ShowSuccessInfo(SharedUtilities.GetTranslation(lang, "UpdateSuccess"));
+                        
+                        // Standard reload - same as manual update does
+                        Logger.LogInfo("Reloading mods after GameBanana auto-update");
+                        await mainWindow.ReloadModsAsync();
+                        Logger.LogInfo("Mods reloaded successfully");
+                        
+                        // Update last run time only after successful reload
+                        SettingsManager.Current.GameBananaLastAutoUpdate = DateTime.Now;
+                        SettingsManager.Save();
+                    });
                 }
             }
             catch (Exception ex)
